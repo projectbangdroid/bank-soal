@@ -30,8 +30,8 @@
   <div id="alertBox" class="alert"></div>
 
   <div class="form-group">
-    <label>Gemini API Key:</label>
-    <input type="password" id="apiKey" placeholder="Masukkan Gemini API Key Anda...">
+    <label>Groq API Key:</label>
+    <input type="password" id="apiKey" placeholder="Masukkan Groq API Key Anda (gsk_...)">
   </div>
 
   <div class="form-group">
@@ -63,7 +63,6 @@
 </div>
 
 <script>
-  // GANTI URL DI BAWAL INI DENGAN URL DEPLOYMENT GOOGLE APPS SCRIPT ANDA
   var GAS_API_URL = "https://script.google.com/macros/s/AKfycbx2X5G69v6LkHjl9LAlTsnSFPFRfJchwhBYNHgdikFAoderYrHYaCvViah_lp7_q7acEA/exec";
 
   var tpDataList = [];
@@ -80,6 +79,9 @@
     payload.action = actionData;
     fetch(GAS_API_URL, {
       method: 'POST',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8'
+      },
       body: JSON.stringify(payload)
     })
     .then(function(res) { return res.json(); })
@@ -135,7 +137,7 @@
   function generateSoal() {
     var apiKey = document.getElementById('apiKey').value.trim();
     if (!apiKey) {
-      alert('Silakan masukkan Gemini API Key!');
+      alert('Silakan masukkan Groq API Key!');
       return;
     }
 
