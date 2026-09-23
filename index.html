@@ -1,1 +1,191 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bank Soal AI Generator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    body { background: #f4f6f9; color: #2d3748; padding: 20px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 800px; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .title { font-size: 20px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; }
+    .form-group { margin-bottom: 15px; }
+    label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; }
+    input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; }
+    .btn-group { display: flex; gap: 10px; margin-top: 15px; }
+    button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; color: #fff; }
+    .btn-primary { background: #3182ce; }
+    .btn-success { background: #38a169; }
+    .btn-purple { background: #805ad5; }
+    button:disabled { background: #a0aec0; cursor: not-allowed; }
+    .card-preview { margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; max-height: 350px; overflow-y: auto; }
+    .soal-item { background: #fff; border: 1px solid #edf2f7; border-radius: 5px; padding: 10px; margin-bottom: 10px; font-size: 13px; }
+    .alert { padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; display: none; background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
+  </style>
+</head>
+<body>
 
+<div class="container">
+  <div class="title">Bank Soal AI Generator</div>
+  <div id="alertBox" class="alert"></div>
+
+  <div class="form-group">
+    <label>Gemini API Key:</label>
+    <input type="password" id="apiKey" placeholder="Masukkan Gemini API Key Anda...">
+  </div>
+
+  <div class="form-group">
+    <label>Pilih Target TP:</label>
+    <select id="selectTP" onchange="onTPChange()">
+      <option value="">-- Memuat data TP... --</option>
+    </select>
+  </div>
+
+  <div id="tpDetail" style="display:none; background:#edf2f7; padding:10px; border-radius:6px; margin-bottom:15px; font-size:13px;">
+    <p><strong>Mapel/Kelas:</strong> <span id="lblMapelKelas"></span></p>
+    <p><strong>Outline:</strong> <span id="lblOutline"></span></p>
+    <p><strong>Target:</strong> <span id="lblJumlahSoal"></span> | <strong>Level:</strong> <span id="lblLevel"></span></p>
+  </div>
+
+  <div class="btn-group">
+    <button id="btnGenerate" class="btn-primary" onclick="generateSoal()" disabled>Generate Soal via AI</button>
+  </div>
+
+  <div id="previewArea" style="display:none;">
+    <h3 style="margin-top:20px; font-size:15px;">Hasil Generasi Soal (<span id="lblTotalSoal">0</span>)</h3>
+    <div class="card-preview" id="soalList"></div>
+
+    <div class="btn-group">
+      <button class="btn-success" onclick="downloadPDF('soal')">Cetak PDF Naskah Soal</button>
+      <button class="btn-purple" onclick="downloadPDF('pembahasan')">Cetak PDF Kunci & Pembahasan</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // GANTI URL DI BAWAL INI DENGAN URL DEPLOYMENT GOOGLE APPS SCRIPT ANDA
+  var GAS_API_URL = "https://script.google.com/macros/s/AKfycbynzbvaXt2nx-4SF6VbKB7wzMxnJS5utsvEEexKxGqpwu23cptG0NdRYyGUU_jDbCvLLg/exec";
+
+  var tpDataList = [];
+  var selectedTP = null;
+  var generatedSoalList = [];
+
+  window.onload = function() {
+    callGAS('getTPList', {}, function(data) {
+      populateTPSelect(data);
+    });
+  };
+
+  function callGAS(actionData, payload, callback) {
+    payload.action = actionData;
+    fetch(GAS_API_URL, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(res) {
+      if (res.status === 'success') {
+        callback(res.data);
+      } else {
+        onError(new Error(res.message));
+      }
+    })
+    .catch(onError);
+  }
+
+  function populateTPSelect(list) {
+    tpDataList = list;
+    var select = document.getElementById('selectTP');
+    select.innerHTML = '<option value="">-- Pilih TP --</option>';
+    
+    for (var i = 0; i < list.length; i++) {
+      var tp = list[i];
+      var opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = '[' + tp.kodeTp + '] ' + tp.mapel + ' Kelas ' + tp.kelas + ' - ' + tp.outline.substring(0, 35) + '...';
+      select.appendChild(opt);
+    }
+  }
+
+  function onTPChange() {
+    var idx = document.getElementById('selectTP').value;
+    if (idx === "") {
+      selectedTP = null;
+      document.getElementById('tpDetail').style.display = 'none';
+      document.getElementById('btnGenerate').disabled = true;
+      return;
+    }
+    
+    selectedTP = tpDataList[idx];
+    document.getElementById('lblMapelKelas').textContent = selectedTP.mapel + ' / Kelas ' + selectedTP.kelas;
+    document.getElementById('lblOutline').textContent = selectedTP.outline;
+    document.getElementById('lblJumlahSoal').textContent = selectedTP.jumlahSoal + ' Soal';
+    document.getElementById('lblLevel').textContent = selectedTP.level;
+    
+    document.getElementById('tpDetail').style.display = 'block';
+    document.getElementById('btnGenerate').disabled = false;
+  }
+
+  function showAlert(msg) {
+    var box = document.getElementById('alertBox');
+    box.innerHTML = msg;
+    box.style.display = 'block';
+  }
+
+  function generateSoal() {
+    var apiKey = document.getElementById('apiKey').value.trim();
+    if (!apiKey) {
+      alert('Silakan masukkan Gemini API Key!');
+      return;
+    }
+
+    var btn = document.getElementById('btnGenerate');
+    btn.disabled = true;
+    btn.textContent = 'Memproses AI... Mohon tunggu';
+    showAlert('Sedang menggenerasi soal & menyusun pembahasan...');
+
+    callGAS('generateSoalAI', { tpData: selectedTP, apiKey: apiKey }, onGenerateSuccess);
+  }
+
+  function onGenerateSuccess(soalList) {
+    generatedSoalList = soalList;
+    var btn = document.getElementById('btnGenerate');
+    btn.disabled = false;
+    btn.textContent = 'Generate Ulang Soal';
+
+    showAlert("Berhasil! Soal telah otomatis disimpan ke sheet 'Bank Soal & Latihan'.");
+
+    document.getElementById('lblTotalSoal').textContent = soalList.length;
+    var container = document.getElementById('soalList');
+    container.innerHTML = '';
+
+    for (var i = 0; i < soalList.length; i++) {
+      var s = soalList[i];
+      container.innerHTML += '<div class="soal-item">' +
+        '<strong>' + (i + 1) + '. ' + s.teksPertanyaan + '</strong> [' + s.levelSoal + ']<br/>' +
+        '<span style="color:#4a5568;">A. ' + s.opsiA + ' | B. ' + s.opsiB + ' | C. ' + s.opsiC + ' | D. ' + s.opsiD + '</span><br/>' +
+        '<span style="color:#2b6cb0;"><strong>Kunci: ' + s.kunci + '</strong> - ' + s.pembahasan + '</span>' +
+        '</div>';
+    }
+
+    document.getElementById('previewArea').style.display = 'block';
+  }
+
+  function downloadPDF(mode) {
+    showAlert("Sedang membuat PDF...");
+    callGAS('exportPDF', { tpData: selectedTP, listSoal: generatedSoalList, mode: mode }, function(res) {
+      showAlert('PDF Berhasil dibuat! <a href="' + res.url + '" target="_blank" style="font-weight:bold; text-decoration:underline;">Klik di sini untuk buka PDF (' + res.name + ')</a>');
+      window.open(res.url, '_blank');
+    });
+  }
+
+  function onError(err) {
+    var btn = document.getElementById('btnGenerate');
+    btn.disabled = false;
+    btn.textContent = 'Generate Soal via AI';
+    alert("Terjadi Kesalahan: " + err.message);
+  }
+</script>
+
+</body>
+</html>
