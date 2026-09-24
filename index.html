@@ -185,38 +185,66 @@
   // ======================================================
   // JEMBATAN KE APPS SCRIPT
   // ======================================================
+    // Bungkus: semua panggilan ke GAS lewat sini
   function callGAS(action, payload, callback, onFail) {
+    kirimGAS_(action, payload, callback, onFail, 1, 3);
+  }
+
+  function kirimGAS_(action, payload, callback, onFail, coba, maks) {
     payload.action = action;
     if (APP_TOKEN) payload.token = APP_TOKEN;
 
-    fetch(GAS_API_URL, {
+    // Cache-buster: supaya browser tidak memakai redirect lama yang sudah kedaluwarsa
+    var url = GAS_API_URL + (GAS_API_URL.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
+
+    fetch(url, {
       method: 'POST',
-      // WAJIB text/plain. Jangan diganti ke application/json -> memicu preflight OPTIONS
-      // yang tidak didukung Apps Script dan menyebabkan "Failed to fetch".
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // jangan diubah
       body: JSON.stringify(payload)
     })
     .then(function (res) { return res.text(); })
     .then(function (txt) {
       var res;
       try { res = JSON.parse(txt); }
-      catch (e) { throw new Error('Respons server bukan JSON: ' + txt.substring(0, 200)); }
+      catch (e) {
+        // Google mengirim halaman HTML error -> perlakukan sebagai gangguan sementara
+        if (String(txt).indexOf('<html') !== -1 || String(txt).indexOf('<!DOCTYPE') !== -1) {
+          throw new Error('__SEMENTARA__');
+        }
+        throw new Error('Respons server bukan JSON: ' + txt.substring(0, 200));
+      }
 
       if (res.status === 'success') {
-        try { callback(res.data); }
-        catch (e) { (onFail || onError)(e); }
+        try { callback(res.data); } catch (e) { (onFail || onError)(e); }
       } else {
         (onFail || onError)(new Error(res.message));
       }
     })
     .catch(function (err) {
-      if (String(err.message).indexOf('Failed to fetch') !== -1) {
-        err = new Error('Gagal menghubungi server. Pastikan deployment Apps Script ' +
-                        'diakses "Anyone" dan URL berakhiran /exec.');
+      var msg = String(err && err.message ? err.message : err);
+      var sementara = (msg === '__SEMENTARA__') ||
+                      msg.indexOf('Failed to fetch') !== -1 ||
+                      msg.indexOf('NetworkError') !== -1 ||
+                      msg.indexOf('Load failed') !== -1;
+
+      if (sementara && coba < maks) {
+        var tunggu = 1200 * coba;
+        showAlert('⏳ Koneksi ke server gagal, mencoba ulang… (percobaan ' + (coba + 1) + ' dari ' + maks + ')');
+        setTimeout(function () {
+          kirimGAS_(action, payload, callback, onFail, coba + 1, maks);
+        }, tunggu);
+        return;
+      }
+
+      if (sementara) {
+        err = new Error('Server tidak merespons setelah ' + maks + ' percobaan. ' +
+          'Coba: (1) refresh halaman, (2) matikan adblocker/Brave Shields, ' +
+          '(3) pastikan deployment GAS "Anyone" + Execute as "Me", (4) cek menu Executions di editor Apps Script.');
       }
       (onFail || onError)(err);
     });
   }
+
 
   // ======================================================
   // DAFTAR TP
