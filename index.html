@@ -17,6 +17,7 @@
     .btn-primary { background: #3182ce; }
     .btn-success { background: #38a169; }
     .btn-purple { background: #805ad5; }
+    .btn-dark { background: #2d3748; }
     button:disabled { background: #a0aec0; cursor: not-allowed; }
     .card-preview { margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; max-height: 350px; overflow-y: auto; }
     .soal-item { background: #fff; border: 1px solid #edf2f7; border-radius: 5px; padding: 10px; margin-bottom: 10px; font-size: 13px; }
@@ -48,6 +49,7 @@
   </div>
 
   <div class="btn-group">
+    <button id="btnSinkron" class="btn-dark" onclick="sinkronkanDrive()">🔄 Sinkronkan Folder Drive</button>
     <button id="btnGenerate" class="btn-primary" onclick="generateSoal()" disabled>Generate Soal via AI</button>
   </div>
 
@@ -70,10 +72,14 @@
   var generatedSoalList = [];
 
   window.onload = function() {
+    loadTPData();
+  };
+
+  function loadTPData() {
     callGAS('getTPList', {}, function(data) {
       populateTPSelect(data);
     });
-  };
+  }
 
   function callGAS(actionData, payload, callback) {
     payload.action = actionData;
@@ -134,6 +140,20 @@
     box.style.display = 'block';
   }
 
+  function sinkronkanDrive() {
+    var btn = document.getElementById('btnSinkron');
+    btn.disabled = true;
+    btn.textContent = 'Memindai Drive...';
+    showAlert('Sedang memindai struktur folder Drive...');
+
+    callGAS('sinkronkanFolderDrive', {}, function(resMsg) {
+      btn.disabled = false;
+      btn.textContent = '🔄 Sinkronkan Folder Drive';
+      showAlert(resMsg);
+      loadTPData();
+    });
+  }
+
   function generateSoal() {
     var apiKey = document.getElementById('apiKey').value.trim();
     if (!apiKey) {
@@ -144,7 +164,7 @@
     var btn = document.getElementById('btnGenerate');
     btn.disabled = true;
     btn.textContent = 'Memproses AI... Mohon tunggu';
-    showAlert('Sedang menggenerasi soal & menyusun pembahasan...');
+    showAlert('Sedang menggenerasi soal & menyusun pembahasan dari variasi acuan...');
 
     callGAS('generateSoalAI', { tpData: selectedTP, apiKey: apiKey }, onGenerateSuccess);
   }
@@ -182,9 +202,14 @@
   }
 
   function onError(err) {
-    var btn = document.getElementById('btnGenerate');
-    btn.disabled = false;
-    btn.textContent = 'Generate Soal via AI';
+    var btnGen = document.getElementById('btnGenerate');
+    var btnSin = document.getElementById('btnSinkron');
+    btnGen.disabled = false;
+    btnGen.textContent = 'Generate Soal via AI';
+    if (btnSin) {
+      btnSin.disabled = false;
+      btnSin.textContent = '🔄 Sinkronkan Folder Drive';
+    }
     alert("Terjadi Kesalahan: " + err.message);
   }
 </script>
