@@ -1,216 +1,415 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bank Soal AI Generator</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
-    body { background: #f4f6f9; color: #2d3748; padding: 20px; display: flex; justify-content: center; }
-    .container { width: 100%; max-width: 800px; background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .title { font-size: 20px; font-weight: bold; margin-bottom: 15px; border-bottom: 2px solid #edf2f7; padding-bottom: 10px; }
-    .form-group { margin-bottom: 15px; }
-    label { display: block; font-size: 13px; font-weight: bold; margin-bottom: 5px; }
-    input, select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 6px; font-size: 14px; }
-    .btn-group { display: flex; gap: 10px; margin-top: 15px; }
-    button { flex: 1; padding: 12px; border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; color: #fff; }
-    .btn-primary { background: #3182ce; }
-    .btn-success { background: #38a169; }
-    .btn-purple { background: #805ad5; }
-    .btn-dark { background: #2d3748; }
-    button:disabled { background: #a0aec0; cursor: not-allowed; }
-    .card-preview { margin-top: 20px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; max-height: 350px; overflow-y: auto; }
-    .soal-item { background: #fff; border: 1px solid #edf2f7; border-radius: 5px; padding: 10px; margin-bottom: 10px; font-size: 13px; }
-    .alert { padding: 10px; border-radius: 6px; font-size: 13px; margin-bottom: 15px; display: none; background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bank Soal AI Generator</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
+  body { background: #eef2f7; color: #1f2a37; padding: 16px;
+         display: flex; justify-content: center; min-height: 100vh; }
+  .container { width: 100%; max-width: 860px; }
+
+  .hero { background: linear-gradient(135deg, #2b6cb0, #3182ce); color: #fff;
+          border-radius: 12px; padding: 18px 20px; margin-bottom: 14px;
+          box-shadow: 0 4px 14px rgba(43,108,176,.25); }
+  .hero h1 { font-size: 19px; }
+  .hero p { font-size: 12.5px; opacity: .9; margin-top: 4px; }
+
+  .card { background: #fff; border-radius: 12px; padding: 18px;
+          box-shadow: 0 2px 10px rgba(0,0,0,.06); margin-bottom: 14px; }
+
+  label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: #4a5568; }
+  select { width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px;
+           font-size: 14px; background: #fff; }
+  select:disabled { background: #f1f5f9; color: #94a3b8; }
+
+  .detail { margin-top: 12px; background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 8px; padding: 12px; font-size: 13px; }
+  .row { display: flex; gap: 10px; padding: 3px 0; }
+  .row .k { flex: 0 0 118px; color: #718096; font-weight: 600; }
+  .row .v { flex: 1; }
+
+  .btn-group { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+  button { flex: 1; min-width: 170px; padding: 12px; border: none; border-radius: 8px;
+           font-size: 14px; font-weight: 600; cursor: pointer; color: #fff; transition: .15s; }
+  button:disabled { background: #a0aec0 !important; cursor: not-allowed; }
+  .btn-primary { background: #3182ce; } .btn-primary:hover:not(:disabled) { background: #2b6cb0; }
+  .btn-dark    { background: #2d3748; } .btn-dark:hover:not(:disabled)    { background: #1a202c; }
+  .btn-success { background: #38a169; } .btn-success:hover:not(:disabled) { background: #2f855a; }
+  .btn-purple  { background: #805ad5; } .btn-purple:hover:not(:disabled)  { background: #6b46c1; }
+
+  .progress-wrap { margin-top: 14px; }
+  .progress-bar { height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #3182ce, #38a169);
+                   border-radius: 99px; transition: width .3s ease; }
+  .progress-text { font-size: 12px; color: #4a5568; margin-top: 6px; text-align: right; }
+
+  .alert { display: none; padding: 12px 14px; border-radius: 8px; font-size: 13px;
+           margin-bottom: 14px; background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
+  .alert.success { background: #f0fff4; color: #276749; border-color: #c6f6d5; }
+  .alert.error   { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
+  .alert a { color: inherit; }
+
+  h3.sec { font-size: 15px; margin-bottom: 10px; }
+  .card-preview { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+                  padding: 12px; max-height: 460px; overflow-y: auto; }
+  .soal-item { background: #fff; border: 1px solid #edf2f7; border-radius: 8px;
+               padding: 12px; margin-bottom: 10px; font-size: 13px; }
+  .soal-head { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 6px; }
+  .soal-head strong { flex: 1; }
+  .badge { flex: 0 0 auto; background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8;
+           font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 99px; }
+  .opsi { color: #4a5568; margin-left: 10px; line-height: 1.6; }
+  .kunci { margin-top: 8px; padding: 8px 10px; background: #f0fff4; border-left: 3px solid #38a169;
+           border-radius: 4px; color: #22543d; font-size: 12.5px; }
+  .foot { text-align: center; font-size: 11.5px; color: #a0aec0; padding: 6px 0 20px; }
+</style>
 </head>
 <body>
 
 <div class="container">
-  <div class="title">Bank Soal AI Generator</div>
-  <div id="alertBox" class="alert"></div>
 
-  <div class="form-group">
-    <label>Groq API Key:</label>
-    <input type="password" id="apiKey" placeholder="Masukkan Groq API Key Anda (gsk_...)">
+  <div class="hero">
+    <h1>🤖 Bank Soal AI Generator</h1>
+    <p>Sinkron folder Drive → generate soal via AI → cetak PDF. API key tersimpan aman di server.</p>
   </div>
 
-  <div class="form-group">
-    <label>Pilih Target TP:</label>
+  <div id="alertBox" class="alert"></div>
+
+  <div class="card">
+    <label for="selectTP">Pilih Target TP</label>
     <select id="selectTP" onchange="onTPChange()">
       <option value="">-- Memuat data TP... --</option>
     </select>
+
+    <div id="tpDetail" class="detail" style="display:none;">
+      <div class="row"><span class="k">Mapel / Kelas</span><span class="v" id="lblMapelKelas">-</span></div>
+      <div class="row"><span class="k">Outline</span><span class="v" id="lblOutline">-</span></div>
+      <div class="row"><span class="k">Target &amp; Level</span><span class="v" id="lblTarget">-</span></div>
+    </div>
+
+    <div class="btn-group">
+      <button id="btnSinkron" class="btn-dark" onclick="sinkronkanDrive()">🔄 Sinkronkan Folder Drive</button>
+      <button id="btnGenerate" class="btn-primary" onclick="generateSoal()" disabled>⚡ Generate Soal via AI</button>
+    </div>
+
+    <div id="progressWrap" class="progress-wrap" style="display:none;">
+      <div class="progress-bar"><div id="progressFill" class="progress-fill"></div></div>
+      <div id="progressText" class="progress-text"></div>
+    </div>
   </div>
 
-  <div id="tpDetail" style="display:none; background:#edf2f7; padding:10px; border-radius:6px; margin-bottom:15px; font-size:13px;">
-    <p><strong>Mapel/Kelas:</strong> <span id="lblMapelKelas"></span></p>
-    <p><strong>Outline:</strong> <span id="lblOutline"></span></p>
-    <p><strong>Target:</strong> <span id="lblJumlahSoal"></span> | <strong>Level:</strong> <span id="lblLevel"></span></p>
-  </div>
-
-  <div class="btn-group">
-    <button id="btnSinkron" class="btn-dark" onclick="sinkronkanDrive()">🔄 Sinkronkan Folder Drive</button>
-    <button id="btnGenerate" class="btn-primary" onclick="generateSoal()" disabled>Generate Soal via AI</button>
-  </div>
-
-  <div id="previewArea" style="display:none;">
-    <h3 style="margin-top:20px; font-size:15px;">Hasil Generasi Soal (<span id="lblTotalSoal">0</span>)</h3>
+  <div id="previewArea" class="card" style="display:none;">
+    <h3 class="sec">Hasil Generasi Soal (<span id="lblTotalSoal">0</span>)</h3>
     <div class="card-preview" id="soalList"></div>
 
     <div class="btn-group">
-      <button class="btn-success" onclick="downloadPDF('soal')">Cetak PDF Naskah Soal</button>
-      <button class="btn-purple" onclick="downloadPDF('pembahasan')">Cetak PDF Kunci & Pembahasan</button>
+      <button class="btn-success" onclick="downloadPDF('soal')">🖨️ Cetak PDF Naskah Soal</button>
+      <button class="btn-purple" onclick="downloadPDF('pembahasan')">🔑 Cetak PDF Kunci &amp; Pembahasan</button>
     </div>
   </div>
+
+  <div class="foot">Data tersimpan otomatis ke Google Sheets &amp; Google Drive Anda.</div>
 </div>
 
 <script>
+  // ======================================================
+  // KONFIGURASI
+  // ======================================================
   var GAS_API_URL = "https://script.google.com/macros/s/AKfycbxPK0ENPGf4RuA-IFLKYE1nd7FRDdqjn0-O5aKkdAggIGSvU0fkLVG0PVCoM3i9Ru1BfA/exec";
 
+  // Isi kalau kamu memakai APP_TOKEN di code.gs. Kalau tidak, biarkan "".
+  var APP_TOKEN = "";
+
+  // Jumlah soal per 1 request (samakan dengan SOAL_PER_BATCH di code.gs)
+  var BATCH_SIZE = 5;
+
+  // ======================================================
+  // STATE
+  // ======================================================
   var tpDataList = [];
   var selectedTP = null;
   var generatedSoalList = [];
+  var sedangProses = false;
 
-  window.onload = function() {
-    loadTPData();
-  };
+  window.addEventListener('load', loadTPData);
 
-  function loadTPData() {
-    callGAS('getTPList', {}, function(data) {
-      populateTPSelect(data);
-    });
+  // ======================================================
+  // HELPER
+  // ======================================================
+  function el(id) { return document.getElementById(id); }
+
+  function esc(t) {
+    if (t === null || t === undefined) return '';
+    return String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
-  function callGAS(actionData, payload, callback) {
-    payload.action = actionData;
-    fetch(GAS_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8'
-      },
-      body: JSON.stringify(payload)
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(res) {
-      if (res.status === 'success') {
-        callback(res.data);
-      } else {
-        onError(new Error(res.message));
-      }
-    })
-    .catch(onError);
-  }
-
-  function populateTPSelect(list) {
-    tpDataList = list;
-    var select = document.getElementById('selectTP');
-    select.innerHTML = '<option value="">-- Pilih TP --</option>';
-    
-    for (var i = 0; i < list.length; i++) {
-      var tp = list[i];
-      var opt = document.createElement('option');
-      opt.value = i;
-      opt.textContent = '[' + tp.kodeTp + '] ' + tp.mapel + ' Kelas ' + tp.kelas + ' - ' + tp.outline.substring(0, 35) + '...';
-      select.appendChild(opt);
-    }
-  }
-
-  function onTPChange() {
-    var idx = document.getElementById('selectTP').value;
-    if (idx === "") {
-      selectedTP = null;
-      document.getElementById('tpDetail').style.display = 'none';
-      document.getElementById('btnGenerate').disabled = true;
-      return;
-    }
-    
-    selectedTP = tpDataList[idx];
-    document.getElementById('lblMapelKelas').textContent = selectedTP.mapel + ' / Kelas ' + selectedTP.kelas;
-    document.getElementById('lblOutline').textContent = selectedTP.outline;
-    document.getElementById('lblJumlahSoal').textContent = selectedTP.jumlahSoal + ' Soal';
-    document.getElementById('lblLevel').textContent = selectedTP.level;
-    
-    document.getElementById('tpDetail').style.display = 'block';
-    document.getElementById('btnGenerate').disabled = false;
-  }
-
-  function showAlert(msg) {
-    var box = document.getElementById('alertBox');
+  function showAlert(msg, type) {
+    var box = el('alertBox');
+    box.className = 'alert' + (type ? ' ' + type : '');
     box.innerHTML = msg;
     box.style.display = 'block';
   }
 
-  function sinkronkanDrive() {
-    var btn = document.getElementById('btnSinkron');
-    btn.disabled = true;
-    btn.textContent = 'Memindai Drive...';
-    showAlert('Sedang memindai struktur folder Drive...');
-
-    callGAS('sinkronkanFolderDrive', {}, function(resMsg) {
-      btn.disabled = false;
-      btn.textContent = '🔄 Sinkronkan Folder Drive';
-      showAlert(resMsg);
-      loadTPData();
-    });
+  function showProgress(done, total) {
+    el('progressWrap').style.display = 'block';
+    var pct = total ? Math.round((done / total) * 100) : 0;
+    el('progressFill').style.width = pct + '%';
+    el('progressText').textContent = done + ' / ' + total + ' soal (' + pct + '%)';
   }
 
-  function generateSoal() {
-    var apiKey = document.getElementById('apiKey').value.trim();
-    if (!apiKey) {
-      alert('Silakan masukkan Groq API Key!');
-      return;
-    }
-
-    var btn = document.getElementById('btnGenerate');
-    btn.disabled = true;
-    btn.textContent = 'Memproses AI... Mohon tunggu';
-    showAlert('Sedang menggenerasi soal & menyusun pembahasan dari variasi acuan...');
-
-    callGAS('generateSoalAI', { tpData: selectedTP, apiKey: apiKey }, onGenerateSuccess);
+  function hideProgress() {
+    el('progressWrap').style.display = 'none';
+    el('progressFill').style.width = '0%';
+    el('progressText').textContent = '';
   }
 
-  function onGenerateSuccess(soalList) {
-    generatedSoalList = soalList;
-    var btn = document.getElementById('btnGenerate');
-    btn.disabled = false;
-    btn.textContent = 'Generate Ulang Soal';
-
-    showAlert("Berhasil! Soal telah otomatis disimpan ke sheet 'Bank Soal & Latihan'.");
-
-    document.getElementById('lblTotalSoal').textContent = soalList.length;
-    var container = document.getElementById('soalList');
-    container.innerHTML = '';
-
-    for (var i = 0; i < soalList.length; i++) {
-      var s = soalList[i];
-      container.innerHTML += '<div class="soal-item">' +
-        '<strong>' + (i + 1) + '. ' + s.teksPertanyaan + '</strong> [' + s.levelSoal + ']<br/>' +
-        '<span style="color:#4a5568;">A. ' + s.opsiA + ' | B. ' + s.opsiB + ' | C. ' + s.opsiC + ' | D. ' + s.opsiD + '</span><br/>' +
-        '<span style="color:#2b6cb0;"><strong>Kunci: ' + s.kunci + '</strong> - ' + s.pembahasan + '</span>' +
-        '</div>';
-    }
-
-    document.getElementById('previewArea').style.display = 'block';
-  }
-
-  function downloadPDF(mode) {
-    showAlert("Sedang membuat PDF...");
-    callGAS('exportPDF', { tpData: selectedTP, listSoal: generatedSoalList, mode: mode }, function(res) {
-      showAlert('PDF Berhasil dibuat! <a href="' + res.url + '" target="_blank" style="font-weight:bold; text-decoration:underline;">Klik di sini untuk buka PDF (' + res.name + ')</a>');
-      window.open(res.url, '_blank');
-    });
+  function setBusy(isBusy, labelGen) {
+    sedangProses = isBusy;
+    el('selectTP').disabled = isBusy;
+    el('btnSinkron').disabled = isBusy;
+    var btn = el('btnGenerate');
+    btn.disabled = isBusy || !selectedTP;
+    if (labelGen) btn.textContent = labelGen;
   }
 
   function onError(err) {
-    var btnGen = document.getElementById('btnGenerate');
-    var btnSin = document.getElementById('btnSinkron');
-    btnGen.disabled = false;
-    btnGen.textContent = 'Generate Soal via AI';
-    if (btnSin) {
-      btnSin.disabled = false;
-      btnSin.textContent = '🔄 Sinkronkan Folder Drive';
+    setBusy(false, '⚡ Generate Soal via AI');
+    hideProgress();
+    showAlert('⚠️ ' + esc(err && err.message ? err.message : err), 'error');
+  }
+
+  // ======================================================
+  // JEMBATAN KE APPS SCRIPT
+  // ======================================================
+  function callGAS(action, payload, callback, onFail) {
+    payload.action = action;
+    if (APP_TOKEN) payload.token = APP_TOKEN;
+
+    fetch(GAS_API_URL, {
+      method: 'POST',
+      // WAJIB text/plain. Jangan diganti ke application/json -> memicu preflight OPTIONS
+      // yang tidak didukung Apps Script dan menyebabkan "Failed to fetch".
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload)
+    })
+    .then(function (res) { return res.text(); })
+    .then(function (txt) {
+      var res;
+      try { res = JSON.parse(txt); }
+      catch (e) { throw new Error('Respons server bukan JSON: ' + txt.substring(0, 200)); }
+
+      if (res.status === 'success') {
+        try { callback(res.data); }
+        catch (e) { (onFail || onError)(e); }
+      } else {
+        (onFail || onError)(new Error(res.message));
+      }
+    })
+    .catch(function (err) {
+      if (String(err.message).indexOf('Failed to fetch') !== -1) {
+        err = new Error('Gagal menghubungi server. Pastikan deployment Apps Script ' +
+                        'diakses "Anyone" dan URL berakhiran /exec.');
+      }
+      (onFail || onError)(err);
+    });
+  }
+
+  // ======================================================
+  // DAFTAR TP
+  // ======================================================
+  function loadTPData() {
+    var select = el('selectTP');
+    select.innerHTML = '<option value="">-- Memuat data TP... --</option>';
+
+    callGAS('getTPList', {}, function (list) {
+      tpDataList = list || [];
+      populateTPSelect(tpDataList);
+    }, function (err) {
+      select.innerHTML = '<option value="">-- Gagal memuat data --</option>';
+      onError(err);
+    });
+  }
+
+  function populateTPSelect(list) {
+    var select = el('selectTP');
+
+    if (!list.length) {
+      select.innerHTML = '<option value="">-- Belum ada data TP. Klik "Sinkronkan Folder Drive" dulu --</option>';
+      return;
     }
-    alert("Terjadi Kesalahan: " + err.message);
+
+    var html = '<option value="">-- Pilih TP (' + list.length + ' tersedia) --</option>';
+    for (var i = 0; i < list.length; i++) {
+      var tp = list[i];
+      var outline = String(tp.outline || '');
+      if (outline.length > 40) outline = outline.substring(0, 40) + '...';
+      html += '<option value="' + i + '">[' + esc(tp.kodeTp) + '] ' + esc(tp.mapel) +
+              ' Kelas ' + esc(tp.kelas) + ' - ' + esc(outline) + '</option>';
+    }
+    select.innerHTML = html;
+  }
+
+  function onTPChange() {
+    var idx = el('selectTP').value;
+
+    if (idx === "") {
+      selectedTP = null;
+      el('tpDetail').style.display = 'none';
+      el('btnGenerate').disabled = true;
+      return;
+    }
+
+    selectedTP = tpDataList[idx];
+    el('lblMapelKelas').textContent = selectedTP.mapel + ' / Kelas ' + selectedTP.kelas;
+    el('lblOutline').textContent = selectedTP.outline || '-';
+    el('lblTarget').textContent = selectedTP.jumlahSoal + ' soal | Level ' + selectedTP.level;
+    el('tpDetail').style.display = 'block';
+    el('btnGenerate').disabled = false;
+    el('btnGenerate').textContent = '⚡ Generate Soal via AI';
+  }
+
+  // ======================================================
+  // SINKRONISASI DRIVE
+  // ======================================================
+  function sinkronkanDrive() {
+    if (sedangProses) return;
+    setBusy(true, '⏳ Memproses...');
+    el('btnSinkron').textContent = '⏳ Memindai Drive...';
+    showAlert('Sedang memindai struktur folder Drive...');
+
+    callGAS('sinkronkanFolderDrive', {}, function (msg) {
+      setBusy(false, '⚡ Generate Soal via AI');
+      el('btnSinkron').textContent = '🔄 Sinkronkan Folder Drive';
+      selectedTP = null;
+      el('tpDetail').style.display = 'none';
+      el('previewArea').style.display = 'none';
+      generatedSoalList = [];
+      hideProgress();
+      showAlert('✅ ' + esc(msg), 'success');
+      loadTPData();
+    }, function (err) {
+      setBusy(false, '⚡ Generate Soal via AI');
+      el('btnSinkron').textContent = '🔄 Sinkronkan Folder Drive';
+      onError(err);
+    });
+  }
+
+  // ======================================================
+  // GENERATE SOAL (per batch)
+  // ======================================================
+  function generateSoal() {
+    if (!selectedTP) { showAlert('Pilih TP terlebih dahulu.', 'error'); return; }
+    if (sedangProses) return;
+
+    var target = parseInt(selectedTP.jumlahSoal, 10) || 10;
+    generatedSoalList = [];
+    el('previewArea').style.display = 'none';
+    setBusy(true, '⏳ Memproses AI...');
+    showProgress(0, target);
+    showAlert('Menggenerasi ' + target + ' soal (' + BATCH_SIZE + ' soal per batch). ' +
+              'Mohon tunggu dan jangan tutup halaman ini...');
+
+    jalanBatchBerikutnya(target);
+  }
+
+  function jalanBatchBerikutnya(target) {
+    if (generatedSoalList.length >= target) { selesaikanGenerate(target); return; }
+
+    var butuh = Math.min(BATCH_SIZE, target - generatedSoalList.length);
+
+    callGAS('generateSoalBatch', {
+      tpData: selectedTP,
+      jumlah: butuh,
+      soalSebelumnya: generatedSoalList   // agar AI tidak membuat soal yang sama
+    }, function (batch) {
+      if (batch && batch.length) {
+        generatedSoalList = generatedSoalList.concat(batch);
+      }
+      showProgress(generatedSoalList.length, target);
+
+      if (!batch || !batch.length) { selesaikanGenerate(target); return; } // cegah loop tanpa henti
+      jalanBatchBerikutnya(target);
+    }, function (err) {
+      setBusy(false, '⚡ Generate Soal via AI');
+      hideProgress();
+      if (generatedSoalList.length) { renderPreview(); }
+      onError(err);
+    });
+  }
+
+  function selesaikanGenerate(target) {
+    if (!generatedSoalList.length) {
+      setBusy(false, '⚡ Generate Soal via AI');
+      hideProgress();
+      showAlert('AI tidak menghasilkan soal. Silakan klik Generate lagi.', 'error');
+      return;
+    }
+
+    generatedSoalList = generatedSoalList.slice(0, target);
+    showProgress(generatedSoalList.length, target);
+
+    callGAS('simpanSoal', {
+      kodeTp: selectedTP.kodeTp,
+      listSoal: generatedSoalList
+    }, function (jumlahTersimpan) {
+      setBusy(false, '🔁 Generate Ulang');
+      hideProgress();
+      showAlert('✅ Berhasil! ' + jumlahTersimpan + ' soal tersimpan di sheet "Bank Soal & Latihan".', 'success');
+      renderPreview();
+    }, function (err) {
+      setBusy(false, '🔁 Generate Ulang');
+      hideProgress();
+      renderPreview();
+      showAlert('⚠️ Soal sudah dibuat, tapi gagal disimpan ke sheet: ' + esc(err.message), 'error');
+    });
+  }
+
+  // ======================================================
+  // PREVIEW
+  // ======================================================
+  function renderPreview() {
+    el('lblTotalSoal').textContent = generatedSoalList.length;
+
+    var html = '';
+    for (var i = 0; i < generatedSoalList.length; i++) {
+      var s = generatedSoalList[i];
+      html += '<div class="soal-item">' +
+        '<div class="soal-head">' +
+          '<strong>' + (i + 1) + '. ' + esc(s.teksPertanyaan) + '</strong>' +
+          '<span class="badge">' + esc(s.levelSoal || 'C2') + '</span>' +
+        '</div>' +
+        '<div class="opsi">A. ' + esc(s.opsiA) + '<br>B. ' + esc(s.opsiB) +
+        '<br>C. ' + esc(s.opsiC) + '<br>D. ' + esc(s.opsiD) + '</div>' +
+        '<div class="kunci"><strong>Kunci: ' + esc(s.kunci) + '</strong> — ' + esc(s.pembahasan) + '</div>' +
+      '</div>';
+    }
+
+    el('soalList').innerHTML = html;
+    el('previewArea').style.display = 'block';
+  }
+
+  // ======================================================
+  // EXPORT PDF
+  // ======================================================
+  function downloadPDF(mode) {
+    if (!generatedSoalList.length) { showAlert('Belum ada soal untuk dicetak.', 'error'); return; }
+
+    showAlert('Sedang membuat PDF...');
+    callGAS('exportPDF', {
+      tpData: selectedTP,
+      listSoal: generatedSoalList,
+      mode: mode
+    }, function (res) {
+      showAlert('✅ PDF berhasil dibuat: <a href="' + esc(res.url) + '" target="_blank" rel="noopener">' +
+                esc(res.name) + '</a>', 'success');
+      window.open(res.url, '_blank', 'noopener');
+    }, function (err) {
+      onError(new Error('Gagal membuat PDF: ' + err.message));
+    });
   }
 </script>
 
