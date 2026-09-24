@@ -262,6 +262,14 @@
     });
   }
 
+    }, function (err) {
+      select.innerHTML = '<option value="">-- Gagal memuat data --</option>';
+      showAlert('⚠️ Gagal memuat daftar TP. ' +
+        '<a href="#" onclick="loadTPData();return false;"><strong>Coba lagi</strong></a>', 'error');
+      setBusy(false, '⚡ Generate Soal via AI');
+    });
+
+ 
   function populateTPSelect(list) {
     var select = el('selectTP');
 
