@@ -7,7 +7,8 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
-  body { background: #eef2f7; color: #1f2a37; padding: 16px; display: flex; justify-content: center; min-height: 100vh; }
+  body { background: #eef2f7; color: #1f2a37; padding: 16px; display: flex;
+         justify-content: center; min-height: 100vh; }
   .container { width: 100%; max-width: 880px; }
 
   /* ---------- LOGIN ---------- */
@@ -42,10 +43,12 @@
   .chip.danger { background: rgba(255,255,255,.28); font-weight: 700; cursor: pointer; }
   .chip.danger:hover { background: #fff; color: #c53030; }
 
-  .card { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 2px 10px rgba(0,0,0,.06); margin-bottom: 14px; }
+  .card { background: #fff; border-radius: 12px; padding: 18px; margin-bottom: 14px;
+          box-shadow: 0 2px 10px rgba(0,0,0,.06); }
   .sec { font-size: 14px; margin-bottom: 12px; color: #2d3748; }
   .sec span.num { display: inline-block; background: #ebf8ff; color: #2b6cb0; border-radius: 99px;
-                  width: 20px; height: 20px; line-height: 20px; text-align: center; font-size: 11.5px; margin-right: 6px; }
+                  width: 20px; height: 20px; line-height: 20px; text-align: center;
+                  font-size: 11.5px; margin-right: 6px; }
   .sec a.muat { font-size: 11.5px; font-weight: 600; color: #3182ce; float: right; text-decoration: none; }
 
   label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: #4a5568; }
@@ -56,7 +59,8 @@
   .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
 
-  .detail { margin-top: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 13px; }
+  .detail { margin-top: 14px; background: #f8fafc; border: 1px solid #e2e8f0;
+            border-radius: 8px; padding: 12px; font-size: 13px; }
   .row { display: flex; gap: 10px; padding: 3px 0; }
   .row .k { flex: 0 0 130px; color: #718096; font-weight: 600; }
   .row .v { flex: 1; }
@@ -72,20 +76,21 @@
 
   .progress-wrap { margin-top: 14px; }
   .progress-bar { height: 8px; background: #e2e8f0; border-radius: 99px; overflow: hidden; }
-  .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #3182ce, #38a169);
-                   border-radius: 99px; transition: width .3s ease; }
+  .progress-fill { height: 100%; width: 0%; border-radius: 99px; transition: width .3s ease;
+                   background: linear-gradient(90deg, #3182ce, #38a169); }
   .progress-text { font-size: 12px; color: #4a5568; margin-top: 6px; text-align: right; }
 
   .alert { display: none; padding: 12px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 14px;
-           background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; line-height: 1.6; word-break: break-word; }
+           background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8;
+           line-height: 1.6; word-break: break-word; }
   .alert.success { background: #f0fff4; color: #276749; border-color: #c6f6d5; }
   .alert.error   { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
   .alert a { color: inherit; font-weight: 700; }
 
   .card-preview { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
                   padding: 12px; max-height: 500px; overflow-y: auto; }
-  .soal-item { background: #fff; border: 1px solid #edf2f7; border-radius: 8px; padding: 12px;
-               margin-bottom: 10px; font-size: 13px; }
+  .soal-item { background: #fff; border: 1px solid #edf2f7; border-radius: 8px;
+               padding: 12px; margin-bottom: 10px; font-size: 13px; }
   .soal-head { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 6px; }
   .soal-head strong { flex: 1; }
   .badge { flex: 0 0 auto; background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8;
@@ -130,7 +135,7 @@
   <div class="hero">
     <div>
       <h1>🤖 Bank Soal AI Generator</h1>
-      <p>Pilih mapel & TP → tentukan jumlah soal dan level → cetak PDF siap fotokopi</p>
+      <p>Pilih mapel &amp; TP → tentukan jumlah soal dan level → cetak PDF siap fotokopi</p>
     </div>
     <div class="hero-user">
       <span class="chip">👤 <span id="lblNama">-</span></span>
@@ -217,6 +222,7 @@
   var BATCH_DELAY_MS = 15000;
   var TIMEOUT_MS     = 75000;
   var MAKS_COBA      = 3;
+  var CACHE_TP_KEY   = 'BSAI_TP_CACHE';
 
   // ======================================================
   // STATE
@@ -265,6 +271,20 @@
   }
 
   // ======================================================
+  // CACHE DAFTAR TP (agar refresh terasa instan)
+  // ======================================================
+  function simpanCacheTP(list) {
+    try { localStorage.setItem(CACHE_TP_KEY, JSON.stringify(list)); } catch (e) {}
+  }
+
+  function bacaCacheTP() {
+    try {
+      var raw = localStorage.getItem(CACHE_TP_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) { return null; }
+  }
+
+  // ======================================================
   // LOGIN / SESI
   // ======================================================
   function bootstrap() {
@@ -274,23 +294,29 @@
 
     if (!SESSION.token) { tampilkanLogin(); return; }
 
+    // Tampilkan aplikasi SEKARANG, jangan menunggu server -> refresh terasa instan
+    el('layarLogin').style.display = 'none';
+    el('layarApp').style.display = 'block';
+    el('lblNama').textContent = SESSION.nama || 'Pengguna';
+    el('lblKuota').textContent = '…';
+
+    loadTPData();   // langsung dari cache, lalu diperbarui dari server
+
+    // Validasi sesi & segarkan kuota di belakang
     callGAS('cekSesi', {}, function (info) {
       SESSION.nama = info.nama; SESSION.email = info.email;
       simpanSesi();
-      tampilkanApp(info);
-      loadTPData();
+      el('lblNama').textContent = info.nama || 'Pengguna';
+      perbaruiKuota(info);
     }, function (err) {
       var m = String(err && err.message ? err.message : err);
 
-      // HANYA logout kalau server benar-benar menolak sesinya
       if (m.indexOf('AUTH:') === 0) {
         hapusSesi();
         tampilkanLogin(m.replace(/^AUTH:\s*/, ''));
       } else {
-        el('layarApp').style.display = 'none';
-        el('layarLogin').style.display = 'flex';
-        pesanLoginHtml('Gagal memeriksa sesi: ' + esc(m) +
-          '<br><a href="#" onclick="cobaLagiSesi();return false;">Coba lagi</a>');
+        showAlert('⚠️ Gagal memverifikasi sesi: ' + esc(m) +
+          ' <a href="#" onclick="bootstrap();return false;">Coba lagi</a>', 'error');
       }
     });
   }
@@ -312,6 +338,7 @@
     localStorage.removeItem('BSAI_TOKEN');
     localStorage.removeItem('BSAI_NAMA');
     localStorage.removeItem('BSAI_EMAIL');
+    localStorage.removeItem(CACHE_TP_KEY);
   }
 
   function tampilkanLogin(msg) {
@@ -323,7 +350,7 @@
   function tampilkanApp(info) {
     el('layarLogin').style.display = 'none';
     el('layarApp').style.display = 'block';
-    el('lblNama').textContent = info.nama || 'Pengguna';
+    el('lblNama').textContent = (info && info.nama) ? info.nama : 'Pengguna';
     perbaruiKuota(info);
   }
 
@@ -496,17 +523,28 @@
 
   function loadTPData() {
     var sel = el('selMapel');
-    sel.innerHTML = '<option value="">-- memuat data TP... --</option>';
+    var cache = bacaCacheTP();
 
+    // 1) Tampilkan dari cache -> instan, tidak menunggu server
+    if (cache && cache.length) {
+      if (!selectedTP) { tpDataList = cache; resetPilihan(); populateMapel(); }
+    } else {
+      sel.innerHTML = '<option value="">-- memuat data TP... --</option>';
+    }
+
+    // 2) Ambil data terbaru dari server di belakang
     callGAS('getTPList', {}, function (list) {
       tpDataList = list || [];
-      resetPilihan();
-      populateMapel();
+      simpanCacheTP(tpDataList);
+
+      if (!selectedTP) { resetPilihan(); populateMapel(); }
     }, function (err) {
-      sel.innerHTML = '<option value="">-- gagal memuat --</option>';
-      showAlert('⚠️ Gagal memuat daftar TP. ' +
-        '<a href="#" onclick="loadTPData();return false;">Coba lagi</a>' +
-        '<br><small>' + esc(err.message) + '</small>', 'error');
+      if (!cache || !cache.length) {
+        sel.innerHTML = '<option value="">-- gagal memuat --</option>';
+        showAlert('⚠️ Gagal memuat daftar TP. ' +
+          '<a href="#" onclick="loadTPData();return false;">Coba lagi</a>' +
+          '<br><small>' + esc(err.message) + '</small>', 'error');
+      }
     });
   }
 
@@ -688,7 +726,7 @@
   }
 
   // ======================================================
-  // UTILITAS PROGRES & STATUS
+  // PROGRES & STATUS
   // ======================================================
   function showProgress(done, total) {
     el('progressWrap').style.display = 'block';
@@ -725,8 +763,7 @@
       kelas: t.kelas,
       outline: t.outline || '',
       level: t.level || 'C1-C4',
-      jumlahSoal: t.jumlahSoal || 10,
-      contohSoal: t.contohSoal || ''
+      jumlahSoal: t.jumlahSoal || 10
     };
   }
 
