@@ -16,6 +16,10 @@
           box-shadow: 0 4px 14px rgba(43,108,176,.25); }
   .hero h1 { font-size: 19px; }
   .hero p { font-size: 12.5px; opacity: .9; margin-top: 4px; }
+  .hero .tes { display: inline-block; margin-top: 10px; font-size: 11.5px;
+               background: rgba(255,255,255,.18); padding: 5px 10px; border-radius: 99px;
+               color: #fff; text-decoration: none; cursor: pointer; }
+  .hero .tes:hover { background: rgba(255,255,255,.3); }
 
   .card { background: #fff; border-radius: 12px; padding: 18px;
           box-shadow: 0 2px 10px rgba(0,0,0,.06); margin-bottom: 14px; }
@@ -47,10 +51,11 @@
   .progress-text { font-size: 12px; color: #4a5568; margin-top: 6px; text-align: right; }
 
   .alert { display: none; padding: 12px 14px; border-radius: 8px; font-size: 13px;
-           margin-bottom: 14px; background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
+           margin-bottom: 14px; background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8;
+           line-height: 1.6; word-break: break-word; }
   .alert.success { background: #f0fff4; color: #276749; border-color: #c6f6d5; }
   .alert.error   { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
-  .alert a { color: inherit; }
+  .alert a { color: inherit; font-weight: 700; }
 
   h3.sec { font-size: 15px; margin-bottom: 10px; }
   .card-preview { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
@@ -73,7 +78,8 @@
 
   <div class="hero">
     <h1>🤖 Bank Soal AI Generator</h1>
-    <p>Sinkron folder Drive → generate soal via AI → cetak PDF. API key tersimpan aman di server.</p>
+    <p>Sinkron folder Drive → generate soal via AI → cetak PDF.</p>
+    <a class="tes" href="#" onclick="tesKoneksi();return false;">🔍 Tes Koneksi Server</a>
   </div>
 
   <div id="alertBox" class="alert"></div>
@@ -118,13 +124,18 @@
   // ======================================================
   // KONFIGURASI
   // ======================================================
+
+  // Kalau sudah pakai proxy Vercel (file api/gas.js), biarkan "/api/gas".
+  // Kalau mau kembali memanggil Apps Script langsung, isi URL /exec di sini.
   var GAS_API_URL = "/api/gas";
 
   // Isi kalau kamu memakai APP_TOKEN di code.gs. Kalau tidak, biarkan "".
   var APP_TOKEN = "";
 
-  // Jumlah soal per 1 request (samakan dengan SOAL_PER_BATCH di code.gs)
-  var BATCH_SIZE = 5;
+  var BATCH_SIZE      = 3;      // jumlah soal per request (samakan dengan SOAL_PER_BATCH di code.gs)
+  var BATCH_DELAY_MS  = 15000;  // jeda antar batch supaya tidak kena limit token per menit Groq
+  var TIMEOUT_MS      = 75000;  // batas tunggu satu request (anti menggantung)
+  var MAKS_COBA       = 3;      // percobaan ulang saat gangguan sementara
 
   // ======================================================
   // STATE
@@ -179,42 +190,51 @@
   function onError(err) {
     setBusy(false, '⚡ Generate Soal via AI');
     hideProgress();
+    if (el('btnSinkron').textContent.indexOf('Memindai') !== -1) {
+      el('btnSinkron').textContent = '🔄 Sinkronkan Folder Drive';
+    }
     showAlert('⚠️ ' + esc(err && err.message ? err.message : err), 'error');
   }
 
   // ======================================================
-  // JEMBATAN KE APPS SCRIPT
+  // JEMBATAN KE APPS SCRIPT (lewat proxy /api/gas atau langsung)
   // ======================================================
-    // Bungkus: semua panggilan ke GAS lewat sini
   function callGAS(action, payload, callback, onFail) {
-    kirimGAS_(action, payload, callback, onFail, 1, 3);
+    kirimGAS_(action, payload, callback, onFail, 1);
   }
 
-  function kirimGAS_(action, payload, callback, onFail, coba, maks) {
+  function kirimGAS_(action, payload, callback, onFail, coba) {
     payload.action = action;
     if (APP_TOKEN) payload.token = APP_TOKEN;
 
-    // Cache-buster: supaya browser tidak memakai redirect lama yang sudah kedaluwarsa
-        var pakaiProxy = GAS_API_URL.charAt(0) === '/';
-    // ...
-      headers: { 'Content-Type': pakaiProxy ? 'application/json' : 'text/plain;charset=utf-8' },
+    var pakaiProxy = GAS_API_URL.charAt(0) === '/';
 
+    // Cache-buster supaya browser/server tidak memakai redirect lama yang kedaluwarsa
+    var url = GAS_API_URL + (GAS_API_URL.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
+
+    // Batas waktu supaya tidak menggantung selamanya
+    var kontrol = new AbortController();
+    var timer = setTimeout(function () { kontrol.abort(); }, TIMEOUT_MS);
 
     fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // jangan diubah
-      body: JSON.stringify(payload)
+      // Lewat proxy: application/json (agar body terbaca otomatis oleh Vercel).
+      // Langsung ke Apps Script: WAJIB text/plain agar tidak memicu preflight OPTIONS.
+      headers: { 'Content-Type': pakaiProxy ? 'application/json' : 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+      signal: kontrol.signal
     })
     .then(function (res) { return res.text(); })
     .then(function (txt) {
+      clearTimeout(timer);
+
       var res;
       try { res = JSON.parse(txt); }
       catch (e) {
-        // Google mengirim halaman HTML error -> perlakukan sebagai gangguan sementara
         if (String(txt).indexOf('<html') !== -1 || String(txt).indexOf('<!DOCTYPE') !== -1) {
           throw new Error('__SEMENTARA__');
         }
-        throw new Error('Respons server bukan JSON: ' + txt.substring(0, 200));
+        throw new Error('Respons server bukan JSON: ' + String(txt).substring(0, 200));
       }
 
       if (res.status === 'success') {
@@ -224,30 +244,57 @@
       }
     })
     .catch(function (err) {
+      clearTimeout(timer);
+
       var msg = String(err && err.message ? err.message : err);
       var sementara = (msg === '__SEMENTARA__') ||
                       msg.indexOf('Failed to fetch') !== -1 ||
                       msg.indexOf('NetworkError') !== -1 ||
-                      msg.indexOf('Load failed') !== -1;
+                      msg.indexOf('Load failed') !== -1 ||
+                      msg.indexOf('abort') !== -1;
 
-      if (sementara && coba < maks) {
-        var tunggu = 1200 * coba;
-        showAlert('⏳ Koneksi ke server gagal, mencoba ulang… (percobaan ' + (coba + 1) + ' dari ' + maks + ')');
-        setTimeout(function () {
-          kirimGAS_(action, payload, callback, onFail, coba + 1, maks);
-        }, tunggu);
+      if (sementara && coba < MAKS_COBA) {
+        showAlert('⏳ Koneksi ke server gagal, mencoba ulang… (percobaan ' + (coba + 1) + ' dari ' + MAKS_COBA + ')');
+        setTimeout(function () { kirimGAS_(action, payload, callback, onFail, coba + 1); }, 1200 * coba);
         return;
       }
 
       if (sementara) {
-        err = new Error('Server tidak merespons setelah ' + maks + ' percobaan. ' +
-          'Coba: (1) refresh halaman, (2) matikan adblocker/Brave Shields, ' +
-          '(3) pastikan deployment GAS "Anyone" + Execute as "Me", (4) cek menu Executions di editor Apps Script.');
+        err = new Error('Server tidak merespons setelah ' + MAKS_COBA + ' percobaan. ' +
+          'Cek: (1) proxy /api/gas aktif, (2) refresh halaman, (3) matikan adblocker, ' +
+          '(4) lihat menu Executions di editor Apps Script.');
       }
       (onFail || onError)(err);
     });
   }
 
+  // ======================================================
+  // TES KONEKSI (untuk diagnosa)
+  // ======================================================
+  function tesKoneksi() {
+    showAlert('⏳ Menguji koneksi ke server...');
+
+    var url = GAS_API_URL.charAt(0) === '/'
+      ? GAS_API_URL
+      : GAS_API_URL + '?t=' + Date.now();
+
+    fetch(url, { method: 'GET' })
+      .then(function (r) { return r.text(); })
+      .then(function (t) {
+        var info = 'Jalur server: ' + esc(String(t).replace(/\s+/g, ' ').substring(0, 110));
+
+        callGAS('getTPList', {}, function (list) {
+          showAlert('✅ ' + info + '<br>Data TP: <strong>' + list.length + '</strong> terbaca dari spreadsheet.', 'success');
+        }, function (err) {
+          showAlert('⚠️ ' + info + '<br>getTPList gagal: ' + esc(err.message), 'error');
+        });
+      })
+      .catch(function (e) {
+        showAlert('❌ Jalur server gagal: ' + esc(e.message) +
+          '<br>Kalau alamatnya /api/gas, pastikan file <code>api/gas.js</code> ada di root repo ' +
+          'dan deployment Vercel statusnya Ready.', 'error');
+      });
+  }
 
   // ======================================================
   // DAFTAR TP
@@ -260,19 +307,14 @@
       tpDataList = list || [];
       populateTPSelect(tpDataList);
     }, function (err) {
-      select.innerHTML = '<option value="">-- Gagal memuat data --</option>';
-      onError(err);
+      select.innerHTML = '<option value="">-- Gagal memuat data TP --</option>';
+      showAlert('⚠️ Gagal memuat daftar TP. ' +
+        '<a href="#" onclick="loadTPData();return false;">Coba lagi</a>' +
+        '<br><small>' + esc(err.message) + '</small>', 'error');
+      setBusy(false, '⚡ Generate Soal via AI');
     });
   }
 
-    }, function (err) {
-      select.innerHTML = '<option value="">-- Gagal memuat data --</option>';
-      showAlert('⚠️ Gagal memuat daftar TP. ' +
-        '<a href="#" onclick="loadTPData();return false;"><strong>Coba lagi</strong></a>', 'error');
-      setBusy(false, '⚡ Generate Soal via AI');
-    });
-
- 
   function populateTPSelect(list) {
     var select = el('selectTP');
 
@@ -316,6 +358,7 @@
   // ======================================================
   function sinkronkanDrive() {
     if (sedangProses) return;
+
     setBusy(true, '⏳ Memproses...');
     el('btnSinkron').textContent = '⏳ Memindai Drive...';
     showAlert('Sedang memindai struktur folder Drive...');
@@ -363,21 +406,48 @@
     callGAS('generateSoalBatch', {
       tpData: selectedTP,
       jumlah: butuh,
-      soalSebelumnya: generatedSoalList   // agar AI tidak membuat soal yang sama
+      soalSebelumnya: generatedSoalList
     }, function (batch) {
       if (batch && batch.length) {
         generatedSoalList = generatedSoalList.concat(batch);
       }
       showProgress(generatedSoalList.length, target);
 
-      if (!batch || !batch.length) { selesaikanGenerate(target); return; } // cegah loop tanpa henti
-      jalanBatchBerikutnya(target);
+      if (!batch || !batch.length) { selesaikanGenerate(target); return; }
+      if (generatedSoalList.length >= target) { selesaikanGenerate(target); return; }
+
+      jedaBatch(BATCH_DELAY_MS, target);
     }, function (err) {
       setBusy(false, '⚡ Generate Soal via AI');
       hideProgress();
       if (generatedSoalList.length) { renderPreview(); }
+
+      var pesan = String(err && err.message ? err.message : err);
+      if (pesan.indexOf('Limit Groq') !== -1 || pesan.indexOf('429') !== -1) {
+        showAlert('⏳ Kuota token per menit Groq tercapai. Soal yang sudah jadi (' +
+                  generatedSoalList.length + ') tetap tampil. Tunggu ±1 menit, ' +
+                  'lalu klik <strong>Generate Ulang</strong> untuk melanjutkan.', 'error');
+        return;
+      }
       onError(err);
     });
+  }
+
+  // Jeda dengan hitungan mundur supaya user tahu aplikasi tidak nge-hang
+  function jedaBatch(ms, target) {
+    var sisa = Math.ceil(ms / 1000);
+    var ptext = el('progressText');
+    var isiAwal = ptext.textContent;
+
+    var timer = setInterval(function () {
+      sisa--;
+      ptext.textContent = isiAwal + ' • ⏳ jeda ' + sisa + 's (hindari limit)';
+      if (sisa <= 0) {
+        clearInterval(timer);
+        ptext.textContent = isiAwal;
+        jalanBatchBerikutnya(target);
+      }
+    }, 1000);
   }
 
   function selesaikanGenerate(target) {
