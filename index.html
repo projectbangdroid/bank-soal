@@ -10,7 +10,6 @@
   body { background: #eef2f7; color: #1f2a37; padding: 16px; display: flex; justify-content: center; min-height: 100vh; }
   .container { width: 100%; max-width: 880px; }
 
-  /* ---------- LOGIN ---------- */
   .login-wrap { position: fixed; inset: 0; background: linear-gradient(135deg, #1a365d, #2b6cb0);
                 display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
   .login-card { background: #fff; width: 100%; max-width: 380px; border-radius: 16px;
@@ -29,7 +28,6 @@
   .login-help { font-size: 12px; color: #718096; text-align: center; margin-top: 16px; }
   .login-help a { color: #3182ce; font-weight: 600; }
 
-  /* ---------- APLIKASI ---------- */
   .hero { background: linear-gradient(135deg, #2b6cb0, #3182ce); color: #fff; border-radius: 12px;
           padding: 16px 20px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(43,108,176,.25);
           display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
@@ -47,25 +45,24 @@
                   width: 20px; height: 20px; line-height: 20px; text-align: center; font-size: 11.5px; margin-right: 6px; }
 
   label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: #4a5568; }
-  select, input[type=text] { width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px;
+  select { width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px;
            font-size: 14px; background: #fff; }
-  select:disabled, input:read-only { background: #f1f5f9; color: #94a3b8; }
+  select:disabled { background: #f1f5f9; color: #94a3b8; }
 
   .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
 
   .detail { margin-top: 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; font-size: 13px; }
   .row { display: flex; gap: 10px; padding: 3px 0; }
-  .row .k { flex: 0 0 120px; color: #718096; font-weight: 600; }
+  .row .k { flex: 0 0 130px; color: #718096; font-weight: 600; }
   .row .v { flex: 1; }
   .row .v a { color: #3182ce; }
 
   .btn-group { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
-  button.act { flex: 1; min-width: 170px; padding: 12px; border: none; border-radius: 8px;
+  button.act { flex: 1; min-width: 200px; padding: 12px; border: none; border-radius: 8px;
                font-size: 14px; font-weight: 600; cursor: pointer; color: #fff; }
   button.act:disabled { background: #a0aec0 !important; cursor: not-allowed; }
   .btn-primary { background: #3182ce; } .btn-primary:hover:not(:disabled) { background: #2b6cb0; }
-  .btn-dark    { background: #2d3748; } .btn-dark:hover:not(:disabled)    { background: #1a202c; }
   .btn-success { background: #38a169; } .btn-success:hover:not(:disabled) { background: #2f855a; }
   .btn-purple  { background: #805ad5; } .btn-purple:hover:not(:disabled)  { background: #6b46c1; }
 
@@ -129,7 +126,7 @@
   <div class="hero">
     <div>
       <h1>🤖 Bank Soal AI Generator</h1>
-      <p>Pilih mapel & TP → tentukan jumlah soal → cetak PDF siap fotokopi</p>
+      <p>Pilih mapel & TP → tentukan jumlah soal dan level → cetak PDF siap fotokopi</p>
     </div>
     <div class="hero-user">
       <span class="chip">👤 <span id="lblNama">-</span></span>
@@ -143,7 +140,7 @@
   <div class="card">
     <h3 class="sec"><span class="num">1</span>Pilih Materi
       <a href="#" onclick="loadTPData();return false;"
-         style="font-size:11.5px;font-weight:600;color:#3182ce;float:right;text-decoration:none;">↻ Muat ulang</a>
+         style="font-size:11.5px;font-weight:600;color:#3182ce;float:right;text-decoration:none;">↻ Muat ulang dari sheet</a>
     </h3>
 
     <div class="grid3">
@@ -164,7 +161,7 @@
     <div id="tpDetail" class="detail" style="display:none;">
       <div class="row"><span class="k">Mapel / Kelas</span><span class="v" id="lblMapelKelas">-</span></div>
       <div class="row"><span class="k">Materi (Outline)</span><span class="v" id="lblOutline">-</span></div>
-      <div class="row"><span class="k">Aset gambar</span><span class="v" id="lblFolder">-</span></div>
+      <div class="row"><span class="k">Level di sheet</span><span class="v" id="lblLevelSheet">-</span></div>
     </div>
 
     <h3 class="sec" style="margin:18px 0 12px;"><span class="num">2</span>Atur Output Soal</h3>
@@ -175,13 +172,12 @@
         <select id="selJumlah" disabled><option value="">-- pilih TP dulu --</option></select>
       </div>
       <div>
-        <label for="lblLevelInfo">Level Bloom (dari sheet)</label>
-        <input type="text" id="lblLevelInfo" readonly value="-">
+        <label for="selLevel">Tingkat Level (Bloom)</label>
+        <select id="selLevel" disabled><option value="">-- pilih TP dulu --</option></select>
       </div>
     </div>
 
     <div class="btn-group">
-      <button id="btnSinkron" class="act btn-dark" onclick="sinkronkanDrive()">🔄 Sinkronkan Folder Drive</button>
       <button id="btnGenerate" class="act btn-primary" onclick="generateSoal()" disabled>⚡ Generate Soal via AI</button>
     </div>
 
@@ -226,7 +222,8 @@
   var tpDataList = [];
   var selectedMapel = '';
   var selectedKelas = '';
-  var selectedTP = null;
+  var selectedTP = null;    // dari sheet
+  var tpAktif = null;       // salinan + level pilihan user (dipakai saat generate)
   var generatedSoalList = [];
   var sedangProses = false;
 
@@ -343,13 +340,8 @@
 
   function keluar() {
     if (!confirm('Keluar dari aplikasi?')) return;
-    callGAS('logout', {}, function () {
-      hapusSesi();
-      location.reload();
-    }, function () {
-      hapusSesi();
-      location.reload();
-    });
+    callGAS('logout', {}, function () { hapusSesi(); location.reload(); },
+                        function () { hapusSesi(); location.reload(); });
   }
 
   // ======================================================
@@ -396,7 +388,6 @@
 
       var pesan = String(res.message || '');
 
-      // Sesi mati -> paksa login
       if (pesan.indexOf('AUTH:') === 0 && SESSION.token) {
         hapusSesi();
         tampilkanLogin(pesan.replace(/^AUTH:\s*/, ''));
@@ -431,9 +422,6 @@
   function onError(err) {
     setBusy(false, '⚡ Generate Soal via AI');
     hideProgress();
-    if (el('btnSinkron').textContent.indexOf('Memindai') !== -1) {
-      el('btnSinkron').textContent = '🔄 Sinkronkan Folder Drive';
-    }
     showAlert('⚠️ ' + esc(err && err.message ? err.message : err), 'error');
   }
 
@@ -492,7 +480,7 @@
   }
 
   function resetPilihan() {
-    selectedMapel = ''; selectedKelas = ''; selectedTP = null;
+    selectedMapel = ''; selectedKelas = ''; selectedTP = null; tpAktif = null;
     el('tpDetail').style.display = 'none';
     el('selKelas').disabled = true;
     el('selKelas').innerHTML = '<option value="">-- pilih mapel dulu --</option>';
@@ -500,7 +488,8 @@
     el('selTP').innerHTML = '<option value="">-- pilih kelas dulu --</option>';
     el('selJumlah').disabled = true;
     el('selJumlah').innerHTML = '<option value="">-- pilih TP dulu --</option>';
-    el('lblLevelInfo').value = '-';
+    el('selLevel').disabled = true;
+    el('selLevel').innerHTML = '<option value="">-- pilih TP dulu --</option>';
     el('btnGenerate').disabled = true;
   }
 
@@ -509,7 +498,7 @@
     var sel = el('selMapel');
 
     if (!mapel.length) {
-      sel.innerHTML = '<option value="">-- belum ada data TP. Klik "Sinkronkan Folder Drive" --</option>';
+      sel.innerHTML = '<option value="">-- belum ada data TP. Isi sheet "Peta Konsep & TP" lalu klik ↻ Muat ulang --</option>';
       return;
     }
 
@@ -525,12 +514,13 @@
   function onMapelChange() {
     selectedMapel = el('selMapel').value;
     selectedKelas = '';
-    selectedTP = null;
+    selectedTP = null; tpAktif = null;
 
     el('selTP').disabled = true;
     el('selTP').innerHTML = '<option value="">-- pilih kelas dulu --</option>';
     el('tpDetail').style.display = 'none';
     el('selJumlah').disabled = true;
+    el('selLevel').disabled = true;
     el('btnGenerate').disabled = true;
 
     var selK = el('selKelas');
@@ -563,10 +553,11 @@
 
   function onKelasChange() {
     selectedKelas = el('selKelas').value;
-    selectedTP = null;
+    selectedTP = null; tpAktif = null;
 
     el('tpDetail').style.display = 'none';
     el('selJumlah').disabled = true;
+    el('selLevel').disabled = true;
     el('btnGenerate').disabled = true;
 
     var selT = el('selTP');
@@ -602,25 +593,26 @@
     var idx = el('selTP').value;
 
     if (idx === '') {
-      selectedTP = null;
+      selectedTP = null; tpAktif = null;
       el('tpDetail').style.display = 'none';
       el('selJumlah').disabled = true;
       el('selJumlah').innerHTML = '<option value="">-- pilih TP dulu --</option>';
+      el('selLevel').disabled = true;
+      el('selLevel').innerHTML = '<option value="">-- pilih TP dulu --</option>';
       el('btnGenerate').disabled = true;
       return;
     }
 
     selectedTP = tpDataList[idx];
+    tpAktif = null;
 
     el('lblMapelKelas').textContent = selectedTP.mapel + ' / Kelas ' + selectedTP.kelas;
     el('lblOutline').textContent = selectedTP.outline || '-';
-    el('lblFolder').innerHTML = selectedTP.folderDrive
-      ? '<a href="' + esc(selectedTP.folderDrive) + '" target="_blank" rel="noopener">Buka folder aset gambar</a>'
-      : 'belum ada folder';
-    el('lblLevelInfo').value = selectedTP.level || 'C1-C4';
+    el('lblLevelSheet').textContent = selectedTP.level || 'C1-C4';
     el('tpDetail').style.display = 'block';
 
     isiPilihanJumlah(selectedTP.jumlahSoal);
+    isiPilihanLevel(selectedTP.level);
 
     el('btnGenerate').disabled = false;
     el('btnGenerate').textContent = '⚡ Generate Soal via AI';
@@ -639,6 +631,29 @@
     }
     el('selJumlah').innerHTML = html;
     el('selJumlah').disabled = false;
+  }
+
+  function isiPilihanLevel(levelSheet) {
+    var l = String(levelSheet || 'C1-C4').toUpperCase().trim();
+
+    var opsi = [
+      ['',      'Sesuai sheet (' + l + ')'],
+      ['C1',    'C1 — Mengingat'],
+      ['C2',    'C2 — Memahami'],
+      ['C3',    'C3 — Menerapkan'],
+      ['C4',    'C4 — Menganalisis'],
+      ['C1-C2', 'C1–C2 — Campuran ringan'],
+      ['C2-C3', 'C2–C3 — Campuran sedang'],
+      ['C3-C4', 'C3–C4 — Campuran tinggi'],
+      ['C1-C4', 'C1–C4 — Campur merata (acak)']
+    ];
+
+    var html = '';
+    for (var i = 0; i < opsi.length; i++) {
+      html += '<option value="' + opsi[i][0] + '">' + esc(opsi[i][1]) + '</option>';
+    }
+    el('selLevel').innerHTML = html;
+    el('selLevel').disabled = false;
   }
 
   // ======================================================
@@ -663,35 +678,11 @@
     el('selKelas').disabled = isBusy || !selectedMapel;
     el('selTP').disabled = isBusy || !selectedKelas;
     el('selJumlah').disabled = isBusy || !selectedTP;
-    el('btnSinkron').disabled = isBusy;
+    el('selLevel').disabled = isBusy || !selectedTP;
+
     var btn = el('btnGenerate');
     btn.disabled = isBusy || !selectedTP;
     if (labelGen) btn.textContent = labelGen;
-  }
-
-  // ======================================================
-  // SINKRONISASI DRIVE
-  // ======================================================
-  function sinkronkanDrive() {
-    if (sedangProses) return;
-
-    setBusy(true, '⏳ Memproses...');
-    el('btnSinkron').textContent = '⏳ Memindai Drive...';
-    showAlert('Sedang memindai struktur folder Drive...');
-
-    callGAS('sinkronkanFolderDrive', {}, function (msg) {
-      setBusy(false, '⚡ Generate Soal via AI');
-      el('btnSinkron').textContent = '🔄 Sinkronkan Folder Drive';
-      generatedSoalList = [];
-      el('previewArea').style.display = 'none';
-      hideProgress();
-      showAlert('✅ ' + esc(msg), 'success');
-      loadTPData();
-    }, function (err) {
-      setBusy(false, '⚡ Generate Soal via AI');
-      el('btnSinkron').textContent = '🔄 Sinkronkan Folder Drive';
-      onError(err);
-    });
   }
 
   // ======================================================
@@ -795,12 +786,23 @@
     var target = parseInt(el('selJumlah').value, 10);
     if (!target) { showAlert('Tentukan jumlah soal terlebih dahulu.', 'error'); return; }
 
+    var levelPilih = el('selLevel').value;
+
+    // Salin TP + terapkan level pilihan user
+    tpAktif = {};
+    for (var k in selectedTP) {
+      if (Object.prototype.hasOwnProperty.call(selectedTP, k)) tpAktif[k] = selectedTP[k];
+    }
+    if (levelPilih) tpAktif.level = levelPilih;
+
     generatedSoalList = [];
     el('previewArea').style.display = 'none';
     setBusy(true, '⏳ Memproses AI...');
     showProgress(0, target);
-    showAlert('Menggenerasi <strong>' + target + ' soal</strong> (' + BATCH_SIZE +
-              ' soal per batch). Mohon tunggu dan jangan tutup halaman ini…');
+
+    showAlert('Menggenerasi <strong>' + target + ' soal</strong> · Level: <strong>' +
+              esc(tpAktif.level) + '</strong> · ' + BATCH_SIZE +
+              ' soal per batch. Mohon tunggu dan jangan tutup halaman ini…');
 
     jalanBatchBerikutnya(target);
   }
@@ -811,7 +813,7 @@
     var butuh = Math.min(BATCH_SIZE, target - generatedSoalList.length);
 
     callGAS('generateSoalBatch', {
-      tpData: selectedTP,
+      tpData: tpAktif,
       jumlah: butuh,
       soalSebelumnya: generatedSoalList
     }, function (batch) {
@@ -873,7 +875,7 @@
 
     siapkanGambar(generatedSoalList, function () {
       callGAS('simpanSoal', {
-        kodeTp: selectedTP.kodeTp,
+        kodeTp: tpAktif.kodeTp,
         listSoal: generatedSoalList
       }, function (daftarHasil) {
         if (daftarHasil && daftarHasil.length) {
@@ -888,7 +890,6 @@
                   ' soal tersimpan di sheet "Bank Soal & Latihan".', 'success');
         renderPreview();
 
-        // Segarkan sisa kuota
         callGAS('cekSesi', {}, function (info) { perbaruiKuota(info); }, function () {});
       }, function (err) {
         setBusy(false, '🔁 Generate Ulang');
@@ -939,12 +940,13 @@
         pembahasan: s.pembahasan,
         levelSoal: s.levelSoal,
         bersusun: s.bersusun || null,
+        gambarPng: (s.gambarPng && s.gambarPng.length < 120000) ? s.gambarPng : '',
         linkGambar: s.linkGambar || ''
       };
     });
 
     showAlert('Sedang membuat PDF...');
-    callGAS('exportPDF', { tpData: selectedTP, listSoal: kirim, mode: mode }, function (res) {
+    callGAS('exportPDF', { tpData: tpAktif || selectedTP, listSoal: kirim, mode: mode }, function (res) {
       showAlert('✅ PDF berhasil dibuat: <a href="' + esc(res.url) + '" target="_blank" rel="noopener">' +
                 esc(res.name) + '</a>', 'success');
       window.open(res.url, '_blank', 'noopener');
