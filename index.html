@@ -10,6 +10,7 @@
   body { background: #eef2f7; color: #1f2a37; padding: 16px; display: flex; justify-content: center; min-height: 100vh; }
   .container { width: 100%; max-width: 880px; }
 
+  /* ---------- LOGIN ---------- */
   .login-wrap { position: fixed; inset: 0; background: linear-gradient(135deg, #1a365d, #2b6cb0);
                 display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
   .login-card { background: #fff; width: 100%; max-width: 380px; border-radius: 16px;
@@ -24,10 +25,12 @@
                        background: #3182ce; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
   .login-card button:disabled { background: #a0aec0; cursor: not-allowed; }
   .login-error { display: none; margin-top: 14px; padding: 10px 12px; border-radius: 8px; font-size: 12.5px;
-                 background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
-  .login-help { font-size: 12px; color: #718096; text-align: center; margin-top: 16px; }
+                 background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; line-height: 1.6; }
+  .login-error a { color: #c53030; }
+  .login-help { font-size: 12px; color: #718096; text-align: center; margin-top: 16px; line-height: 1.7; }
   .login-help a { color: #3182ce; font-weight: 600; }
 
+  /* ---------- APLIKASI ---------- */
   .hero { background: linear-gradient(135deg, #2b6cb0, #3182ce); color: #fff; border-radius: 12px;
           padding: 16px 20px; margin-bottom: 14px; box-shadow: 0 4px 14px rgba(43,108,176,.25);
           display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
@@ -43,6 +46,7 @@
   .sec { font-size: 14px; margin-bottom: 12px; color: #2d3748; }
   .sec span.num { display: inline-block; background: #ebf8ff; color: #2b6cb0; border-radius: 99px;
                   width: 20px; height: 20px; line-height: 20px; text-align: center; font-size: 11.5px; margin-right: 6px; }
+  .sec a.muat { font-size: 11.5px; font-weight: 600; color: #3182ce; float: right; text-decoration: none; }
 
   label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: #4a5568; }
   select { width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px;
@@ -139,8 +143,7 @@
 
   <div class="card">
     <h3 class="sec"><span class="num">1</span>Pilih Materi
-      <a href="#" onclick="loadTPData();return false;"
-         style="font-size:11.5px;font-weight:600;color:#3182ce;float:right;text-decoration:none;">↻ Muat ulang dari sheet</a>
+      <a class="muat" href="#" onclick="loadTPData();return false;">↻ Muat ulang dari sheet</a>
     </h3>
 
     <div class="grid3">
@@ -223,9 +226,10 @@
   var selectedMapel = '';
   var selectedKelas = '';
   var selectedTP = null;    // dari sheet
-  var tpAktif = null;       // salinan + level pilihan user (dipakai saat generate)
+  var tpAktif = null;       // salinan + level pilihan user
   var generatedSoalList = [];
   var sedangProses = false;
+  var sedangLogin = false;
 
   window.addEventListener('load', bootstrap);
 
@@ -254,6 +258,12 @@
     box.style.display = 'block';
   }
 
+  function pesanLoginHtml(html) {
+    var box = el('loginError');
+    box.innerHTML = html;
+    box.style.display = 'block';
+  }
+
   // ======================================================
   // LOGIN / SESI
   // ======================================================
@@ -270,9 +280,25 @@
       tampilkanApp(info);
       loadTPData();
     }, function (err) {
-      hapusSesi();
-      tampilkanLogin('Sesi berakhir. Silakan masuk kembali.');
+      var m = String(err && err.message ? err.message : err);
+
+      // HANYA logout kalau server benar-benar menolak sesinya
+      if (m.indexOf('AUTH:') === 0) {
+        hapusSesi();
+        tampilkanLogin(m.replace(/^AUTH:\s*/, ''));
+      } else {
+        el('layarApp').style.display = 'none';
+        el('layarLogin').style.display = 'flex';
+        pesanLoginHtml('Gagal memeriksa sesi: ' + esc(m) +
+          '<br><a href="#" onclick="cobaLagiSesi();return false;">Coba lagi</a>');
+      }
     });
+  }
+
+  function cobaLagiSesi() {
+    el('loginError').style.display = 'none';
+    if (!localStorage.getItem('BSAI_TOKEN')) { masuk(); return; }
+    bootstrap();
   }
 
   function simpanSesi() {
@@ -308,15 +334,18 @@
   }
 
   function masuk() {
+    if (sedangLogin) return;
+
     var email = el('inpEmail').value.trim();
     var kode  = el('inpKode').value.trim();
     el('loginError').style.display = 'none';
 
     if (!email || !kode) { pesanLogin('Email dan kode akses wajib diisi.'); return; }
 
+    sedangLogin = true;
     var btn = el('btnMasuk');
     btn.disabled = true;
-    btn.textContent = 'Memeriksa…';
+    btn.textContent = 'Memeriksa… (bisa 5 detik)';
     SESSION.token = '';
 
     callGAS('login', { email: email, kode: kode }, function (info) {
@@ -325,6 +354,7 @@
       SESSION.email = info.email;
       simpanSesi();
 
+      sedangLogin = false;
       btn.disabled = false;
       btn.textContent = 'Masuk';
       el('inpKode').value = '';
@@ -332,6 +362,7 @@
       tampilkanApp(info);
       loadTPData();
     }, function (err) {
+      sedangLogin = false;
       btn.disabled = false;
       btn.textContent = 'Masuk';
       pesanLogin(String(err.message).replace(/^AUTH:\s*/, ''));
@@ -657,7 +688,7 @@
   }
 
   // ======================================================
-  // UTILITAS PROGRES
+  // UTILITAS PROGRES & STATUS
   // ======================================================
   function showProgress(done, total) {
     el('progressWrap').style.display = 'block';
@@ -683,6 +714,20 @@
     var btn = el('btnGenerate');
     btn.disabled = isBusy || !selectedTP;
     if (labelGen) btn.textContent = labelGen;
+  }
+
+  // Ringkasan TP yang dikirim ke server (payload kecil & tahan gangguan)
+  function tpRingkas(t) {
+    if (!t) return null;
+    return {
+      kodeTp: t.kodeTp,
+      mapel: t.mapel,
+      kelas: t.kelas,
+      outline: t.outline || '',
+      level: t.level || 'C1-C4',
+      jumlahSoal: t.jumlahSoal || 10,
+      contohSoal: t.contohSoal || ''
+    };
   }
 
   // ======================================================
@@ -788,7 +833,6 @@
 
     var levelPilih = el('selLevel').value;
 
-    // Salin TP + terapkan level pilihan user
     tpAktif = {};
     for (var k in selectedTP) {
       if (Object.prototype.hasOwnProperty.call(selectedTP, k)) tpAktif[k] = selectedTP[k];
@@ -810,10 +854,19 @@
   function jalanBatchBerikutnya(target) {
     if (generatedSoalList.length >= target) { selesaikanGenerate(target); return; }
 
+    var tp = tpRingkas(tpAktif || selectedTP);
+    if (!tp) {
+      setBusy(false, '⚡ Generate Soal via AI');
+      hideProgress();
+      showAlert('TP tidak ditemukan. Silakan pilih TP lagi.', 'error');
+      return;
+    }
+
     var butuh = Math.min(BATCH_SIZE, target - generatedSoalList.length);
 
     callGAS('generateSoalBatch', {
-      tpData: tpAktif,
+      tpData: tp,
+      level: tp.level,
       jumlah: butuh,
       soalSebelumnya: generatedSoalList
     }, function (batch) {
@@ -873,9 +926,11 @@
     showProgress(generatedSoalList.length, target);
     showAlert('Menyiapkan gambar & menyimpan ke spreadsheet...');
 
+    var kodeTp = (tpAktif || selectedTP).kodeTp;
+
     siapkanGambar(generatedSoalList, function () {
       callGAS('simpanSoal', {
-        kodeTp: tpAktif.kodeTp,
+        kodeTp: kodeTp,
         listSoal: generatedSoalList
       }, function (daftarHasil) {
         if (daftarHasil && daftarHasil.length) {
@@ -932,6 +987,9 @@
   function downloadPDF(mode) {
     if (!generatedSoalList.length) { showAlert('Belum ada soal untuk dicetak.', 'error'); return; }
 
+    var tp = tpRingkas(tpAktif || selectedTP);
+    if (!tp) { showAlert('TP tidak ditemukan. Pilih TP lagi.', 'error'); return; }
+
     var kirim = generatedSoalList.map(function (s) {
       return {
         teksPertanyaan: s.teksPertanyaan,
@@ -946,7 +1004,7 @@
     });
 
     showAlert('Sedang membuat PDF...');
-    callGAS('exportPDF', { tpData: tpAktif || selectedTP, listSoal: kirim, mode: mode }, function (res) {
+    callGAS('exportPDF', { tpData: tp, listSoal: kirim, mode: mode }, function (res) {
       showAlert('✅ PDF berhasil dibuat: <a href="' + esc(res.url) + '" target="_blank" rel="noopener">' +
                 esc(res.name) + '</a>', 'success');
       window.open(res.url, '_blank', 'noopener');
