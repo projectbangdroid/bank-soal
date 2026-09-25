@@ -59,7 +59,7 @@
 
   h3.sec { font-size: 15px; margin-bottom: 10px; }
   .card-preview { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
-                  padding: 12px; max-height: 460px; overflow-y: auto; }
+                  padding: 12px; max-height: 500px; overflow-y: auto; }
   .soal-item { background: #fff; border: 1px solid #edf2f7; border-radius: 8px;
                padding: 12px; margin-bottom: 10px; font-size: 13px; }
   .soal-head { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 6px; }
@@ -124,18 +124,15 @@
   // ======================================================
   // KONFIGURASI
   // ======================================================
-
-  // Kalau sudah pakai proxy Vercel (file api/gas.js), biarkan "/api/gas".
-  // Kalau mau kembali memanggil Apps Script langsung, isi URL /exec di sini.
+  // Kalau pakai proxy Vercel (api/gas.js), biarkan "/api/gas".
+  // Kalau memanggil Apps Script langsung, isi URL /exec di sini.
   var GAS_API_URL = "/api/gas";
 
-  // Isi kalau kamu memakai APP_TOKEN di code.gs. Kalau tidak, biarkan "".
-  var APP_TOKEN = "";
-
-  var BATCH_SIZE      = 3;      // jumlah soal per request (samakan dengan SOAL_PER_BATCH di code.gs)
-  var BATCH_DELAY_MS  = 15000;  // jeda antar batch supaya tidak kena limit token per menit Groq
-  var TIMEOUT_MS      = 75000;  // batas tunggu satu request (anti menggantung)
-  var MAKS_COBA       = 3;      // percobaan ulang saat gangguan sementara
+  var APP_TOKEN = "";             // samakan dengan APP_TOKEN di code.gs kalau dipakai
+  var BATCH_SIZE     = 3;         // samakan dengan SOAL_PER_BATCH di code.gs
+  var BATCH_DELAY_MS = 15000;     // 20 detik kalau sering pakai gambar
+  var TIMEOUT_MS     = 75000;
+  var MAKS_COBA      = 3;
 
   // ======================================================
   // STATE
@@ -197,7 +194,7 @@
   }
 
   // ======================================================
-  // JEMBATAN KE APPS SCRIPT (lewat proxy /api/gas atau langsung)
+  // JEMBATAN KE APPS SCRIPT
   // ======================================================
   function callGAS(action, payload, callback, onFail) {
     kirimGAS_(action, payload, callback, onFail, 1);
@@ -208,18 +205,13 @@
     if (APP_TOKEN) payload.token = APP_TOKEN;
 
     var pakaiProxy = GAS_API_URL.charAt(0) === '/';
-
-    // Cache-buster supaya browser/server tidak memakai redirect lama yang kedaluwarsa
     var url = GAS_API_URL + (GAS_API_URL.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
 
-    // Batas waktu supaya tidak menggantung selamanya
     var kontrol = new AbortController();
     var timer = setTimeout(function () { kontrol.abort(); }, TIMEOUT_MS);
 
     fetch(url, {
       method: 'POST',
-      // Lewat proxy: application/json (agar body terbaca otomatis oleh Vercel).
-      // Langsung ke Apps Script: WAJIB text/plain agar tidak memicu preflight OPTIONS.
       headers: { 'Content-Type': pakaiProxy ? 'application/json' : 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
       signal: kontrol.signal
@@ -260,39 +252,38 @@
       }
 
       if (sementara) {
-        err = new Error('Server tidak merespons setelah ' + MAKS_COBA + ' percobaan. ' +
-          'Cek: (1) proxy /api/gas aktif, (2) refresh halaman, (3) matikan adblocker, ' +
-          '(4) lihat menu Executions di editor Apps Script.');
+        err = new Error('Server tidak merespons setelah ' + MAKS_COBA + ' percobaan. Cek proxy /api/gas, ' +
+          'refresh halaman, matikan adblocker, atau lihat menu Executions di editor Apps Script.');
       }
       (onFail || onError)(err);
     });
   }
 
   // ======================================================
-  // TES KONEKSI (untuk diagnosa)
+  // TES KONEKSI
   // ======================================================
   function tesKoneksi() {
     showAlert('⏳ Menguji koneksi ke server...');
 
-    var url = GAS_API_URL.charAt(0) === '/'
-      ? GAS_API_URL
-      : GAS_API_URL + '?t=' + Date.now();
+    var url = GAS_API_URL.charAt(0) === '/' ? GAS_API_URL : GAS_API_URL + '?t=' + Date.now();
 
     fetch(url, { method: 'GET' })
       .then(function (r) { return r.text(); })
       .then(function (t) {
-        var info = 'Jalur server: ' + esc(String(t).replace(/\s+/g, ' ').substring(0, 110));
+        var hidup = false;
+        try { JSON.parse(t); hidup = true; } catch (e) { hidup = false; }
+        var info = hidup ? 'Jalur server: <strong>HIDUP</strong>'
+                         : 'Jalur server: ' + esc(String(t).replace(/\s+/g, ' ').substring(0, 100));
 
         callGAS('getTPList', {}, function (list) {
-          showAlert('✅ ' + info + '<br>Data TP: <strong>' + list.length + '</strong> terbaca dari spreadsheet.', 'success');
+          showAlert('✅ ' + info + '<br>Data TP: <strong>' + list.length + '</strong> terbaca.', 'success');
         }, function (err) {
           showAlert('⚠️ ' + info + '<br>getTPList gagal: ' + esc(err.message), 'error');
         });
       })
       .catch(function (e) {
         showAlert('❌ Jalur server gagal: ' + esc(e.message) +
-          '<br>Kalau alamatnya /api/gas, pastikan file <code>api/gas.js</code> ada di root repo ' +
-          'dan deployment Vercel statusnya Ready.', 'error');
+          '<br>Pastikan file <code>api/gas.js</code> ada di root repo dan deployment Vercel Ready.', 'error');
       });
   }
 
@@ -381,6 +372,98 @@
   }
 
   // ======================================================
+  // RENDER BERSUSUN (menurun)
+  // ======================================================
+  function tabelBersusun(b) {
+    if (!b || !b.angka || !b.angka.length) return '';
+
+    var angka = b.angka.map(function (x) { return String(x).trim(); });
+    var op = (String(b.operasi || '+').trim() === '-') ? '-' : '+';
+
+    var hasil = '';
+    if (b.tampilkanHasil) {
+      if (b.hasil && String(b.hasil).trim() !== '') {
+        hasil = String(b.hasil).trim();
+      } else {
+        var n = angka.map(function (x) { return parseInt(String(x).replace(/[^0-9-]/g, ''), 10); });
+        var h = n[0];
+        for (var i = 1; i < n.length; i++) h = (op === '-') ? h - n[i] : h + n[i];
+        hasil = String(h);
+      }
+    }
+
+    var baris = '';
+    for (var k = 0; k < angka.length; k++) {
+      baris += '<tr><td style="text-align:right;padding:1px 8px 1px 0;">' +
+               ((k === angka.length - 1) ? op : '') + '</td>' +
+               '<td style="text-align:right;padding:1px 0;letter-spacing:1px;">' +
+               esc(angka[k]) + '</td></tr>';
+    }
+
+    if (hasil !== '') {
+      baris += '<tr><td style="border-top:2px solid #333;"></td>' +
+               '<td style="border-top:2px solid #333;padding:1px 0;text-align:right;letter-spacing:1px;">' +
+               esc(hasil) + '</td></tr>';
+    }
+
+    return '<table style="border-collapse:collapse;font-size:15px;margin:8px 0 8px 14px;">' +
+           '<tbody>' + baris + '</tbody></table>';
+  }
+
+  // ======================================================
+  // GAMBAR (Opsi A: SVG -> PNG di browser)
+  // ======================================================
+  function svgKePng(svgText, lebar, tinggi) {
+    return new Promise(function (resolve, reject) {
+      var img = new Image();
+      img.onload = function () {
+        try {
+          var c = document.createElement('canvas');
+          c.width = lebar; c.height = tinggi;
+          var ctx = c.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, lebar, tinggi);
+          ctx.drawImage(img, 0, 0, lebar, tinggi);
+          resolve(c.toDataURL('image/png'));
+        } catch (e) { reject(e); }
+      };
+      img.onerror = function () { reject(new Error('SVG tidak bisa dirender')); };
+      img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgText);
+    });
+  }
+
+  function siapkanGambar(list, lanjut) {
+    var i = 0;
+    (function proses() {
+      if (i >= list.length) { lanjut(); return; }
+      var s = list[i++];
+      if (s.gambarSvg && !s.gambarPng) {
+        svgKePng(String(s.gambarSvg), 720, 480)
+          .then(function (d) { s.gambarPng = d; proses(); })
+          .catch(function () { s.gambarPng = ''; proses(); });
+      } else {
+        proses();
+      }
+    })();
+  }
+
+  function htmlGambarSoal(s) {
+    if (s.gambarPng) {
+      return '<div style="margin:8px 0;"><img src="' + s.gambarPng +
+             '" style="max-width:250px;border-radius:6px;"></div>';
+    }
+    if (s.linkGambar) {
+      return '<div style="margin:8px 0;"><img src="' + esc(s.linkGambar) +
+             '" style="max-width:250px;border-radius:6px;"></div>';
+    }
+    if (s.gambarSvg) {
+      return '<div style="margin:8px 0;">' +
+             String(s.gambarSvg).replace(/<script[\s\S]*?<\/script>/gi, '') + '</div>';
+    }
+    return '';
+  }
+
+  // ======================================================
   // GENERATE SOAL (per batch)
   // ======================================================
   function generateSoal() {
@@ -426,14 +509,13 @@
       if (pesan.indexOf('Limit Groq') !== -1 || pesan.indexOf('429') !== -1) {
         showAlert('⏳ Kuota token per menit Groq tercapai. Soal yang sudah jadi (' +
                   generatedSoalList.length + ') tetap tampil. Tunggu ±1 menit, ' +
-                  'lalu klik <strong>Generate Ulang</strong> untuk melanjutkan.', 'error');
+                  'lalu klik <strong>Generate Ulang</strong>.', 'error');
         return;
       }
       onError(err);
     });
   }
 
-  // Jeda dengan hitungan mundur supaya user tahu aplikasi tidak nge-hang
   function jedaBatch(ms, target) {
     var sisa = Math.ceil(ms / 1000);
     var ptext = el('progressText');
@@ -460,20 +542,33 @@
 
     generatedSoalList = generatedSoalList.slice(0, target);
     showProgress(generatedSoalList.length, target);
+    showAlert('Menyiapkan gambar & menyimpan ke spreadsheet...');
 
-    callGAS('simpanSoal', {
-      kodeTp: selectedTP.kodeTp,
-      listSoal: generatedSoalList
-    }, function (jumlahTersimpan) {
-      setBusy(false, '🔁 Generate Ulang');
-      hideProgress();
-      showAlert('✅ Berhasil! ' + jumlahTersimpan + ' soal tersimpan di sheet "Bank Soal & Latihan".', 'success');
-      renderPreview();
-    }, function (err) {
-      setBusy(false, '🔁 Generate Ulang');
-      hideProgress();
-      renderPreview();
-      showAlert('⚠️ Soal sudah dibuat, tapi gagal disimpan ke sheet: ' + esc(err.message), 'error');
+    // Render SVG -> PNG dulu (Opsi A), lalu simpan
+    siapkanGambar(generatedSoalList, function () {
+      callGAS('simpanSoal', {
+        kodeTp: selectedTP.kodeTp,
+        listSoal: generatedSoalList
+      }, function (daftarHasil) {
+        // Ambil link gambar dari server, tapi pertahankan base64 lokal untuk preview
+        if (daftarHasil && daftarHasil.length) {
+          for (var i = 0; i < generatedSoalList.length && i < daftarHasil.length; i++) {
+            if (daftarHasil[i].linkGambar) {
+              generatedSoalList[i].linkGambar = daftarHasil[i].linkGambar;
+            }
+          }
+        }
+
+        setBusy(false, '🔁 Generate Ulang');
+        hideProgress();
+        showAlert('✅ Berhasil! ' + generatedSoalList.length + ' soal tersimpan di sheet "Bank Soal & Latihan".', 'success');
+        renderPreview();
+      }, function (err) {
+        setBusy(false, '🔁 Generate Ulang');
+        hideProgress();
+        renderPreview();
+        showAlert('⚠️ Soal sudah dibuat, tapi gagal disimpan ke sheet: ' + esc(err.message), 'error');
+      });
     });
   }
 
@@ -491,6 +586,8 @@
           '<strong>' + (i + 1) + '. ' + esc(s.teksPertanyaan) + '</strong>' +
           '<span class="badge">' + esc(s.levelSoal || 'C2') + '</span>' +
         '</div>' +
+        (s.bersusun ? tabelBersusun(s.bersusun) : '') +
+        htmlGambarSoal(s) +
         '<div class="opsi">A. ' + esc(s.opsiA) + '<br>B. ' + esc(s.opsiB) +
         '<br>C. ' + esc(s.opsiC) + '<br>D. ' + esc(s.opsiD) + '</div>' +
         '<div class="kunci"><strong>Kunci: ' + esc(s.kunci) + '</strong> — ' + esc(s.pembahasan) + '</div>' +
@@ -507,10 +604,23 @@
   function downloadPDF(mode) {
     if (!generatedSoalList.length) { showAlert('Belum ada soal untuk dicetak.', 'error'); return; }
 
+    // Kirim versi ringkas (tanpa base64) -> server mengambil gambar dari Drive
+    var kirim = generatedSoalList.map(function (s) {
+      return {
+        teksPertanyaan: s.teksPertanyaan,
+        opsiA: s.opsiA, opsiB: s.opsiB, opsiC: s.opsiC, opsiD: s.opsiD,
+        kunci: s.kunci,
+        pembahasan: s.pembahasan,
+        levelSoal: s.levelSoal,
+        bersusun: s.bersusun || null,
+        linkGambar: s.linkGambar || ''
+      };
+    });
+
     showAlert('Sedang membuat PDF...');
     callGAS('exportPDF', {
       tpData: selectedTP,
-      listSoal: generatedSoalList,
+      listSoal: kirim,
       mode: mode
     }, function (res) {
       showAlert('✅ PDF berhasil dibuat: <a href="' + esc(res.url) + '" target="_blank" rel="noopener">' +
