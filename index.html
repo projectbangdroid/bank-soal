@@ -9,27 +9,35 @@
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
   body { background: #eef2f7; color: #1f2a37; padding: 16px; display: flex;
          justify-content: center; min-height: 100vh; }
-  .container { width: 100%; max-width: 880px; }
+  .container { width: 100%; max-width: 900px; }
 
-  /* ---------- LOGIN ---------- */
+  /* ---------- LOGIN / DAFTAR ---------- */
   .login-wrap { position: fixed; inset: 0; background: linear-gradient(135deg, #1a365d, #2b6cb0);
-                display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
-  .login-card { background: #fff; width: 100%; max-width: 380px; border-radius: 16px;
-                padding: 28px 24px; box-shadow: 0 18px 50px rgba(0,0,0,.3); }
+                display: flex; align-items: center; justify-content: center; padding: 20px; z-index: 50;
+                overflow-y: auto; }
+  .login-card { background: #fff; width: 100%; max-width: 400px; border-radius: 16px;
+                padding: 26px 24px; box-shadow: 0 18px 50px rgba(0,0,0,.3); margin: auto; }
   .login-logo { font-size: 34px; text-align: center; }
   .login-card h1 { font-size: 19px; text-align: center; margin-top: 6px; }
-  .login-card .sub { font-size: 12.5px; color: #718096; text-align: center; margin: 6px 0 20px; }
+  .login-card .sub { font-size: 12.5px; color: #718096; text-align: center; margin: 6px 0 16px; }
+
+  .tabs { display: flex; background: #edf2f7; border-radius: 9px; padding: 4px; margin-bottom: 16px; }
+  .tab { flex: 1; padding: 9px; border: none; background: transparent; border-radius: 7px;
+         font-size: 13px; font-weight: 700; color: #718096; cursor: pointer; }
+  .tab.aktif { background: #fff; color: #2b6cb0; box-shadow: 0 1px 4px rgba(0,0,0,.1); }
+
   .login-card label { display: block; font-size: 12.5px; font-weight: 600; margin: 12px 0 6px; color: #4a5568; }
   .login-card input { width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px; font-size: 14px; }
   .login-card input:focus { outline: 2px solid #90cdf4; border-color: #3182ce; }
-  .login-card button { width: 100%; margin-top: 18px; padding: 12px; border: none; border-radius: 8px;
+  .login-card button.utama { width: 100%; margin-top: 18px; padding: 12px; border: none; border-radius: 8px;
                        background: #3182ce; color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
-  .login-card button:disabled { background: #a0aec0; cursor: not-allowed; }
+  .login-card button.utama:disabled { background: #a0aec0; cursor: not-allowed; }
   .login-error { display: none; margin-top: 14px; padding: 10px 12px; border-radius: 8px; font-size: 12.5px;
                  background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; line-height: 1.6; }
-  .login-error a { color: #c53030; }
+  .login-error.ok { background: #f0fff4; color: #276749; border-color: #c6f6d5; }
   .login-help { font-size: 12px; color: #718096; text-align: center; margin-top: 16px; line-height: 1.7; }
   .login-help a { color: #3182ce; font-weight: 600; }
+  .hint { font-size: 11px; color: #94a3b8; margin-top: 5px; line-height: 1.5; }
 
   /* ---------- APLIKASI ---------- */
   .hero { background: linear-gradient(135deg, #2b6cb0, #3182ce); color: #fff; border-radius: 12px;
@@ -37,11 +45,14 @@
           display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
   .hero h1 { font-size: 18px; }
   .hero p { font-size: 12px; opacity: .9; margin-top: 3px; }
-  .hero-user { display: flex; gap: 8px; flex-wrap: wrap; }
+  .hero-user { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .chip { background: rgba(255,255,255,.18); padding: 5px 11px; border-radius: 99px;
           font-size: 11.5px; color: #fff; text-decoration: none; }
+  .chip.admin { background: #f6ad55; color: #7b341e; font-weight: 700; }
   .chip.danger { background: rgba(255,255,255,.28); font-weight: 700; cursor: pointer; }
   .chip.danger:hover { background: #fff; color: #c53030; }
+  .chip.aksi { background: #fff; color: #2b6cb0; font-weight: 700; cursor: pointer; }
+  .chip.aksi:hover { background: #ebf8ff; }
 
   .card { background: #fff; border-radius: 12px; padding: 18px; margin-bottom: 14px;
           box-shadow: 0 2px 10px rgba(0,0,0,.06); }
@@ -52,12 +63,20 @@
   .sec a.muat { font-size: 11.5px; font-weight: 600; color: #3182ce; float: right; text-decoration: none; }
 
   label { display: block; font-size: 12.5px; font-weight: 600; margin-bottom: 6px; color: #4a5568; }
-  select { width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px;
+  select, input[type=text], input[type=number], input[type=date], input[type=email] {
+           width: 100%; padding: 11px; border: 1px solid #cbd5e0; border-radius: 8px;
            font-size: 14px; background: #fff; }
   select:disabled { background: #f1f5f9; color: #94a3b8; }
 
   .grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
   .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+
+  /* ---------- SEGMEN TIPE SOAL ---------- */
+  .segmen { display: flex; gap: 6px; background: #edf2f7; border-radius: 10px; padding: 5px; flex-wrap: wrap; }
+  .seg { flex: 1; min-width: 120px; padding: 10px 6px; border: none; border-radius: 8px; cursor: pointer;
+         background: transparent; font-size: 12.5px; font-weight: 700; color: #64748b; }
+  .seg.aktif { background: #fff; color: #2b6cb0; box-shadow: 0 1px 4px rgba(0,0,0,.12); }
+  .seg:disabled { cursor: not-allowed; opacity: .6; }
 
   .detail { margin-top: 14px; background: #f8fafc; border: 1px solid #e2e8f0;
             border-radius: 8px; padding: 12px; font-size: 13px; }
@@ -87,43 +106,95 @@
   .alert.error   { background: #fff5f5; color: #c53030; border-color: #fed7d7; }
   .alert a { color: inherit; font-weight: 700; }
 
+  /* ---------- TABEL KELOLA USER ---------- */
+  .tbl-wrap { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 9px; }
+  table.tbl { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 720px; }
+  table.tbl th { background: #f7fafc; text-align: left; padding: 9px 10px; color: #4a5568;
+                 font-weight: 700; border-bottom: 1px solid #e2e8f0; white-space: nowrap; }
+  table.tbl td { padding: 8px 10px; border-bottom: 1px solid #edf2f7; vertical-align: middle; }
+  table.tbl tr:last-child td { border-bottom: none; }
+  table.tbl tr.saya { background: #ebf8ff; }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 99px; font-size: 10.5px; font-weight: 700; }
+  .pill.admin { background: #feebc8; color: #7b341e; }
+  .pill.user  { background: #e2e8f0; color: #4a5568; }
+  .pill.aktif { background: #c6f6d5; color: #22543d; }
+  .pill.nonaktif { background: #fed7d7; color: #822727; }
+  .pill.utama { background: #bee3f8; color: #2a4365; }
+  .btn-mini { border: 1px solid #cbd5e0; background: #fff; border-radius: 6px; padding: 5px 9px;
+              font-size: 11px; font-weight: 600; cursor: pointer; color: #4a5568; margin: 2px 3px 2px 0; }
+  .btn-mini:hover { background: #f7fafc; }
+  .btn-mini.bahaya { color: #c53030; border-color: #fed7d7; }
+  .btn-mini.bahaya:hover { background: #fff5f5; }
+  .admin-form { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+                gap: 10px; align-items: end; margin-top: 14px; padding-top: 14px;
+                border-top: 1px dashed #e2e8f0; }
+  .kunci-mini { font-size: 11px; color: #718096; }
+
   .card-preview { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
-                  padding: 12px; max-height: 500px; overflow-y: auto; }
+                  padding: 12px; max-height: 560px; overflow-y: auto; }
   .soal-item { background: #fff; border: 1px solid #edf2f7; border-radius: 8px;
                padding: 12px; margin-bottom: 10px; font-size: 13px; }
+  .soal-item.esai { border-left: 3px solid #805ad5; }
   .soal-head { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 6px; }
   .soal-head strong { flex: 1; }
   .badge { flex: 0 0 auto; background: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8;
            font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 99px; }
+  .badge.esai { background: #faf5ff; color: #6b46c1; border-color: #e9d8fd; }
   .opsi { color: #4a5568; margin-left: 10px; line-height: 1.6; }
   .kunci { margin-top: 8px; padding: 8px 10px; background: #f0fff4; border-left: 3px solid #38a169;
            border-radius: 4px; color: #22543d; font-size: 12.5px; }
+  .kunci.esai { background: #faf5ff; border-left-color: #805ad5; color: #44337a; }
+
   .foot { text-align: center; font-size: 11.5px; color: #a0aec0; padding: 6px 0 20px; }
   .foot a { color: #718096; }
 </style>
 </head>
 <body>
 
-<!-- ================= LAYAR LOGIN ================= -->
+<!-- ================= LAYAR LOGIN / DAFTAR ================= -->
 <div id="layarLogin" class="login-wrap">
   <div class="login-card">
     <div class="login-logo">🤖</div>
     <h1>Bank Soal AI</h1>
-    <p class="sub">Masuk untuk mulai membuat soal</p>
+    <p class="sub">Masuk atau daftar untuk mulai membuat soal</p>
+
+    <div class="tabs">
+      <button type="button" id="tabMasuk" class="tab aktif" onclick="gantiTabLogin('masuk')">Masuk</button>
+      <button type="button" id="tabDaftar" class="tab" onclick="gantiTabLogin('daftar')">Daftar</button>
+    </div>
 
     <div id="loginError" class="login-error"></div>
 
-    <label for="inpEmail">Email</label>
-    <input type="email" id="inpEmail" placeholder="nama@email.com" autocomplete="username">
+    <!-- ----- FORM MASUK ----- -->
+    <div id="panelMasuk">
+      <label for="inpEmail">Email</label>
+      <input type="email" id="inpEmail" placeholder="nama@email.com" autocomplete="username">
 
-    <label for="inpKode">Kode Akses</label>
-    <input type="password" id="inpKode" placeholder="BSAI-XXXXXX" autocomplete="current-password">
+      <label for="inpKode">Kode Akses</label>
+      <input type="password" id="inpKode" placeholder="BSAI-XXXXXX" autocomplete="current-password">
 
-    <button id="btnMasuk" onclick="masuk()">Masuk</button>
+      <button id="btnMasuk" class="utama" onclick="masuk()">Masuk</button>
+    </div>
 
-    <p class="login-help">Belum punya kode akses?<br>
-      <a href="https://wa.me/6281234567890" target="_blank" rel="noopener">Hubungi admin</a>
-      <span style="color:#cbd5e0;">|</span>
+    <!-- ----- FORM DAFTAR ----- -->
+    <div id="panelDaftar" style="display:none;">
+      <label for="inpDaftarNama">Nama</label>
+      <input type="text" id="inpDaftarNama" placeholder="Bu Sari" autocomplete="name">
+
+      <label for="inpDaftarEmail">Email</label>
+      <input type="email" id="inpDaftarEmail" placeholder="nama@email.com" autocomplete="email">
+
+      <label for="inpDaftarKode">Kode Akses (buat sendiri)</label>
+      <input type="password" id="inpDaftarKode" placeholder="minimal 6 karakter" autocomplete="new-password">
+      <div class="hint">Kode ini dipakai untuk masuk. Simpan baik-baik, tidak bisa dilihat lagi.</div>
+
+      <label for="inpDaftarKode2">Ulangi Kode Akses</label>
+      <input type="password" id="inpDaftarKode2" placeholder="ulangi kode akses" autocomplete="new-password">
+
+      <button id="btnDaftar" class="utama" onclick="daftar()">Daftar &amp; Masuk</button>
+    </div>
+
+    <p class="login-help">Akun baru mendapat kuota terbatas.<br>
       <a href="#" onclick="tesKoneksi();return false;">Tes koneksi server</a>
     </p>
   </div>
@@ -135,17 +206,82 @@
   <div class="hero">
     <div>
       <h1>🤖 Bank Soal AI Generator</h1>
-      <p>Pilih mapel &amp; TP → tentukan jumlah soal dan level → cetak PDF siap fotokopi</p>
+      <p>Pilih mapel &amp; TP → tentukan tipe soal → cetak PDF siap fotokopi</p>
     </div>
     <div class="hero-user">
       <span class="chip">👤 <span id="lblNama">-</span></span>
+      <span class="chip admin" id="lblRole" style="display:none;">ADMIN</span>
       <span class="chip">🎯 Sisa kuota: <strong id="lblKuota">-</strong></span>
+      <a class="chip aksi" id="btnKelolaUser" href="#" style="display:none;"
+         onclick="bukaKelolaUser();return false;">👥 Kelola User</a>
       <a class="chip danger" href="#" onclick="keluar();return false;">Keluar</a>
     </div>
   </div>
 
   <div id="alertBox" class="alert"></div>
 
+  <!-- ================= PANEL KELOLA USER (ADMIN) ================= -->
+  <div class="card" id="cardAdmin" style="display:none;">
+    <h3 class="sec"><span class="num">👥</span>Kelola User
+      <a class="muat" href="#" onclick="muatUser();return false;">↻ Muat ulang</a>
+    </h3>
+
+    <div id="lblAdminInfo" class="kunci-mini" style="margin-bottom:10px;">
+      Akun admin utama: <strong id="lblAdminUtama">-</strong>
+    </div>
+
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead>
+          <tr>
+            <th>Email</th>
+            <th>Nama</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Kuota</th>
+            <th>Terpakai</th>
+            <th>Aksi</th>
+          </tr>
+        </thead>
+        <tbody id="usersBody">
+          <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:18px;">Memuat data user…</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="sec" style="margin:20px 0 0;font-size:13px;">Tambah User</h3>
+    <div class="admin-form">
+      <div>
+        <label for="inpUserNama">Nama</label>
+        <input type="text" id="inpUserNama" placeholder="Bu Sari">
+      </div>
+      <div>
+        <label for="inpUserEmail">Email</label>
+        <input type="email" id="inpUserEmail" placeholder="guru@email.com">
+      </div>
+      <div>
+        <label for="inpUserKode">Kode Akses</label>
+        <input type="text" id="inpUserKode" placeholder="kosong = acak">
+      </div>
+      <div>
+        <label for="inpUserKuota">Kuota (0 = tanpa batas)</label>
+        <input type="number" id="inpUserKuota" placeholder="5" min="0">
+      </div>
+      <div>
+        <label for="inpUserRole">Role</label>
+        <select id="inpUserRole">
+          <option value="user">user</option>
+          <option value="admin">admin</option>
+        </select>
+      </div>
+      <div>
+        <button class="btn-mini" style="padding:11px 14px;font-size:13px;width:100%;background:#3182ce;color:#fff;border:none;"
+                onclick="tambahUser()">+ Tambah</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 1. PILIH MATERI ================= -->
   <div class="card">
     <h3 class="sec"><span class="num">1</span>Pilih Materi
       <a class="muat" href="#" onclick="loadTPData();return false;">↻ Muat ulang dari sheet</a>
@@ -171,13 +307,27 @@
       <div class="row"><span class="k">Materi (Outline)</span><span class="v" id="lblOutline">-</span></div>
       <div class="row"><span class="k">Level di sheet</span><span class="v" id="lblLevelSheet">-</span></div>
     </div>
+  </div>
 
-    <h3 class="sec" style="margin:18px 0 12px;"><span class="num">2</span>Atur Output Soal</h3>
+  <!-- ================= 2. ATUR OUTPUT ================= -->
+  <div class="card">
+    <h3 class="sec"><span class="num">2</span>Atur Output Soal</h3>
 
-    <div class="grid2">
-      <div>
-        <label for="selJumlah">Jumlah Soal</label>
-        <select id="selJumlah" disabled><option value="">-- pilih TP dulu --</option></select>
+    <label>Tipe Soal</label>
+    <div id="opsiTipe" class="segmen">
+      <button type="button" class="seg aktif" data-tipe="PG" onclick="pilihTipe('PG')">Pilihan Ganda</button>
+      <button type="button" class="seg" data-tipe="ESAI" onclick="pilihTipe('ESAI')">Esai</button>
+      <button type="button" class="seg" data-tipe="KEDUANYA" onclick="pilihTipe('KEDUANYA')">Keduanya</button>
+    </div>
+
+    <div class="grid2" style="margin-top:14px;">
+      <div id="wrapJumlahPg">
+        <label for="selJumlahPg">Jumlah Soal Pilihan Ganda</label>
+        <select id="selJumlahPg" disabled><option value="">-- pilih TP dulu --</option></select>
+      </div>
+      <div id="wrapJumlahEsai" style="display:none;">
+        <label for="selJumlahEsai">Jumlah Soal Esai</label>
+        <select id="selJumlahEsai" disabled><option value="">-- pilih TP dulu --</option></select>
       </div>
       <div>
         <label for="selLevel">Tingkat Level (Bloom)</label>
@@ -195,6 +345,7 @@
     </div>
   </div>
 
+  <!-- ================= HASIL ================= -->
   <div id="previewArea" class="card" style="display:none;">
     <h3 class="sec">Hasil Generasi Soal (<span id="lblTotalSoal">0</span>)</h3>
     <div class="card-preview" id="soalList"></div>
@@ -212,30 +363,40 @@
 </div>
 
 <script>
+  // >>> Isi Bagian 2/3 dan 3/3 di dalam tag <script> ini <<<
+</script>
+
+</body>
+</html>
   // ======================================================
   // KONFIGURASI
   // ======================================================
   var GAS_API_URL = "/api/gas";   // atau URL /exec kalau memanggil Apps Script langsung
   var APP_TOKEN   = "";           // samakan dengan APP_TOKEN di code.gs kalau dipakai
 
-  var BATCH_SIZE     = 3;         // samakan dengan SOAL_PER_BATCH di code.gs
+  var BATCH_PG       = 3;         // samakan dengan BATCH_PG di code.gs
+  var BATCH_ESAI     = 2;         // samakan dengan BATCH_ESAI di code.gs
   var BATCH_DELAY_MS = 15000;
   var TIMEOUT_MS     = 75000;
   var MAKS_COBA      = 3;
+  var MIN_KODE       = 6;         // samakan dengan MIN_PANJANG_KODE di code.gs
   var CACHE_TP_KEY   = 'BSAI_TP_CACHE';
 
   // ======================================================
   // STATE
   // ======================================================
-  var SESSION = { token: '', nama: '', email: '' };
+  var SESSION = { token: '', nama: '', email: '', role: '' };
   var tpDataList = [];
   var selectedMapel = '';
   var selectedKelas = '';
-  var selectedTP = null;    // dari sheet
-  var tpAktif = null;       // salinan + level pilihan user
+  var selectedTP = null;      // dari sheet
+  var tpAktif = null;         // salinan + level pilihan user
   var generatedSoalList = [];
+  var daftarUser = [];
+  var tipeDipilih = 'PG';     // PG | ESAI | KEDUANYA
   var sedangProses = false;
   var sedangLogin = false;
+  var sedangMuatUser = false;
 
   window.addEventListener('load', bootstrap);
 
@@ -260,14 +421,29 @@
 
   function pesanLogin(msg) {
     var box = el('loginError');
+    box.className = 'login-error';
     box.innerHTML = esc(msg);
     box.style.display = 'block';
   }
 
-  function pesanLoginHtml(html) {
+  function pesanLoginOk(html) {
     var box = el('loginError');
+    box.className = 'login-error ok';
     box.innerHTML = html;
     box.style.display = 'block';
+  }
+
+  function sembunyikanPesanLogin() {
+    el('loginError').style.display = 'none';
+  }
+
+  function gantiTabLogin(tab) {
+    var masuk = (tab === 'masuk');
+    el('tabMasuk').className = 'tab' + (masuk ? ' aktif' : '');
+    el('tabDaftar').className = 'tab' + (masuk ? '' : ' aktif');
+    el('panelMasuk').style.display = masuk ? 'block' : 'none';
+    el('panelDaftar').style.display = masuk ? 'none' : 'block';
+    sembunyikanPesanLogin();
   }
 
   // ======================================================
@@ -285,12 +461,13 @@
   }
 
   // ======================================================
-  // LOGIN / SESI
+  // LOGIN / DAFTAR / SESI
   // ======================================================
   function bootstrap() {
     SESSION.token = localStorage.getItem('BSAI_TOKEN') || '';
     SESSION.nama  = localStorage.getItem('BSAI_NAMA')  || '';
     SESSION.email = localStorage.getItem('BSAI_EMAIL') || '';
+    SESSION.role  = localStorage.getItem('BSAI_ROLE')  || '';
 
     if (!SESSION.token) { tampilkanLogin(); return; }
 
@@ -299,14 +476,18 @@
     el('layarApp').style.display = 'block';
     el('lblNama').textContent = SESSION.nama || 'Pengguna';
     el('lblKuota').textContent = '…';
+    terapkanRole({ role: SESSION.role });
 
-    loadTPData();   // langsung dari cache, lalu diperbarui dari server
+    loadTPData();
 
     // Validasi sesi & segarkan kuota di belakang
     callGAS('cekSesi', {}, function (info) {
-      SESSION.nama = info.nama; SESSION.email = info.email;
+      SESSION.nama  = info.nama;
+      SESSION.email = info.email;
+      SESSION.role  = info.role;
       simpanSesi();
       el('lblNama').textContent = info.nama || 'Pengguna';
+      terapkanRole(info);
       perbaruiKuota(info);
     }, function (err) {
       var m = String(err && err.message ? err.message : err);
@@ -322,7 +503,7 @@
   }
 
   function cobaLagiSesi() {
-    el('loginError').style.display = 'none';
+    sembunyikanPesanLogin();
     if (!localStorage.getItem('BSAI_TOKEN')) { masuk(); return; }
     bootstrap();
   }
@@ -331,13 +512,15 @@
     localStorage.setItem('BSAI_TOKEN', SESSION.token);
     localStorage.setItem('BSAI_NAMA', SESSION.nama);
     localStorage.setItem('BSAI_EMAIL', SESSION.email);
+    localStorage.setItem('BSAI_ROLE', SESSION.role || '');
   }
 
   function hapusSesi() {
-    SESSION = { token: '', nama: '', email: '' };
+    SESSION = { token: '', nama: '', email: '', role: '' };
     localStorage.removeItem('BSAI_TOKEN');
     localStorage.removeItem('BSAI_NAMA');
     localStorage.removeItem('BSAI_EMAIL');
+    localStorage.removeItem('BSAI_ROLE');
     localStorage.removeItem(CACHE_TP_KEY);
   }
 
@@ -347,10 +530,21 @@
     if (msg) pesanLogin(msg);
   }
 
+  // Tampilkan/sembunyikan elemen khusus admin
+  function terapkanRole(info) {
+    var admin = !!(info && info.role === 'admin');
+    SESSION.role = admin ? 'admin' : 'user';
+    el('lblRole').style.display = admin ? 'inline-block' : 'none';
+    el('btnKelolaUser').style.display = admin ? 'inline-block' : 'none';
+    if (!admin) el('cardAdmin').style.display = 'none';
+    if (admin) el('lblAdminUtama').textContent = SESSION.email || '-';
+  }
+
   function tampilkanApp(info) {
     el('layarLogin').style.display = 'none';
     el('layarApp').style.display = 'block';
     el('lblNama').textContent = (info && info.nama) ? info.nama : 'Pengguna';
+    terapkanRole(info);
     perbaruiKuota(info);
   }
 
@@ -365,7 +559,7 @@
 
     var email = el('inpEmail').value.trim();
     var kode  = el('inpKode').value.trim();
-    el('loginError').style.display = 'none';
+    sembunyikanPesanLogin();
 
     if (!email || !kode) { pesanLogin('Email dan kode akses wajib diisi.'); return; }
 
@@ -379,6 +573,7 @@
       SESSION.token = info.token;
       SESSION.nama  = info.nama;
       SESSION.email = info.email;
+      SESSION.role  = info.role;
       simpanSesi();
 
       sedangLogin = false;
@@ -392,6 +587,50 @@
       sedangLogin = false;
       btn.disabled = false;
       btn.textContent = 'Masuk';
+      pesanLogin(String(err.message).replace(/^AUTH:\s*/, ''));
+    });
+  }
+
+  function daftar() {
+    if (sedangLogin) return;
+
+    var nama  = el('inpDaftarNama').value.trim();
+    var email = el('inpDaftarEmail').value.trim();
+    var kode  = el('inpDaftarKode').value.trim();
+    var kode2 = el('inpDaftarKode2').value.trim();
+    sembunyikanPesanLogin();
+
+    if (!email) { pesanLogin('Email wajib diisi.'); return; }
+    if (email.indexOf('@') === -1 || email.indexOf('.') === -1) { pesanLogin('Format email tidak valid.'); return; }
+    if (kode.length < MIN_KODE) { pesanLogin('Kode akses minimal ' + MIN_KODE + ' karakter.'); return; }
+    if (kode !== kode2) { pesanLogin('Kedua kode akses tidak sama.'); return; }
+
+    sedangLogin = true;
+    var btn = el('btnDaftar');
+    btn.disabled = true;
+    btn.textContent = 'Mendaftar…';
+
+    callGAS('daftar', { email: email, kode: kode, nama: nama }, function (info) {
+      SESSION.token = info.token;
+      SESSION.nama  = info.nama;
+      SESSION.email = info.email;
+      SESSION.role  = info.role;
+      simpanSesi();
+
+      sedangLogin = false;
+      btn.disabled = false;
+      btn.textContent = 'Daftar & Masuk';
+      el('inpDaftarKode').value = '';
+      el('inpDaftarKode2').value = '';
+
+      tampilkanApp(info);
+      loadTPData();
+      showAlert('✅ Selamat datang, <strong>' + esc(info.nama) + '</strong>! ' +
+                'Kuota Anda: <strong>' + (info.kuota ? info.kuota + ' generate' : 'tanpa batas') + '</strong>.', 'success');
+    }, function (err) {
+      sedangLogin = false;
+      btn.disabled = false;
+      btn.textContent = 'Daftar & Masuk';
       pesanLogin(String(err.message).replace(/^AUTH:\s*/, ''));
     });
   }
@@ -411,8 +650,8 @@
 
   function kirimGAS_(action, payload, callback, onFail, coba) {
     payload.action = action;
-    if (APP_TOKEN)  payload.token = APP_TOKEN;
-    if (SESSION.token && action !== 'login') payload.token = SESSION.token;
+    if (APP_TOKEN) payload.appToken = APP_TOKEN;                 // kunci aplikasi (beda field!)
+    if (SESSION.token && action !== 'login' && action !== 'daftar') payload.token = SESSION.token;
 
     var pakaiProxy = GAS_API_URL.charAt(0) === '/';
     var url = GAS_API_URL + (GAS_API_URL.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
@@ -495,6 +734,10 @@
         var hidup = false;
         try { JSON.parse(t); hidup = true; } catch (e) {}
 
+        if (!SESSION.token) {
+          alert('✅ Jalur server ' + (hidup ? 'HIDUP' : 'merespons') + '.\nSilakan login untuk menguji data TP.');
+          return;
+        }
         callGAS('getTPList', {}, function (list) {
           alert('✅ Jalur server ' + (hidup ? 'HIDUP' : 'merespons') + '\n' +
                 'Data TP terbaca: ' + list.length);
@@ -506,6 +749,143 @@
         alert('❌ Jalur server gagal: ' + e.message +
               '\nPastikan api/gas.js ada di root repo dan deployment Vercel Ready.');
       });
+  }
+
+  // ======================================================
+  // KELOLA USER (ADMIN)
+  // ======================================================
+  function bukaKelolaUser() {
+    var card = el('cardAdmin');
+    var tampil = (card.style.display === 'none' || card.style.display === '');
+    card.style.display = tampil ? 'block' : 'none';
+    if (tampil) muatUser();
+  }
+
+  function muatUser() {
+    if (sedangMuatUser) return;
+    sedangMuatUser = true;
+    el('usersBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:18px;">Memuat data user…</td></tr>';
+
+    callGAS('listUsers', {}, function (list) {
+      sedangMuatUser = false;
+      renderUsers(list || []);
+    }, function (err) {
+      sedangMuatUser = false;
+      el('usersBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#c53030;padding:18px;">' +
+        esc(err.message) + '</td></tr>';
+    });
+  }
+
+  function renderUsers(list) {
+    daftarUser = list || [];
+    var html = '';
+
+    if (!daftarUser.length) {
+      html = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:18px;">Belum ada user.</td></tr>';
+    } else {
+      for (var i = 0; i < daftarUser.length; i++) {
+        var u = daftarUser[i];
+        var saya = (String(u.email).toLowerCase() === String(SESSION.email).toLowerCase());
+
+        html += '<tr' + (saya ? ' class="saya"' : '') + '>' +
+          '<td>' + esc(u.email) + (saya ? ' <span class="pill utama">saya</span>' : '') +
+            (u.adminUtama ? ' <span class="pill utama">utama</span>' : '') + '</td>' +
+          '<td>' + esc(u.nama || '-') + '</td>' +
+          '<td><span class="pill ' + esc(u.role) + '">' + esc(u.role) + '</span></td>' +
+          '<td><span class="pill ' + esc(u.status) + '">' + esc(u.status) + '</span></td>' +
+          '<td>' + (u.kuota === 0 ? '∞' : u.kuota) + '</td>' +
+          '<td>' + u.terpakai + '</td>' +
+          '<td>' + tombolAksiUser(u, saya) + '</td>' +
+        '</tr>';
+      }
+    }
+
+    el('usersBody').innerHTML = html;
+  }
+
+  function tombolAksiUser(u, saya) {
+    if (u.adminUtama || saya) {
+      return '<span class="kunci-mini">—</span>';
+    }
+
+    var t = '';
+    t += '<button class="btn-mini" onclick="ubahRole(\'' + esc(u.email) + '\',\'' +
+         (u.role === 'admin' ? 'user' : 'admin') + '\')">' +
+         (u.role === 'admin' ? '↓ jadikan user' : '↑ jadikan admin') + '</button>';
+
+    t += '<button class="btn-mini" onclick="ubahStatus(\'' + esc(u.email) + '\',\'' +
+         (u.status === 'aktif' ? 'nonaktif' : 'aktif') + '\')">' +
+         (u.status === 'aktif' ? '⏸ nonaktifkan' : '▶ aktifkan') + '</button>';
+
+    t += '<button class="btn-mini" onclick="ubahKuota(\'' + esc(u.email) + '\',' + u.kuota +
+         ',\'' + esc(u.kadaluarsa || '') + '\')">🎯 kuota</button>';
+
+    t += '<button class="btn-mini bahaya" onclick="hapusUser(\'' + esc(u.email) + '\')">🗑 hapus</button>';
+
+    return t;
+  }
+
+  function ubahRole(email, roleBaru) {
+    if (!confirm('Ubah role ' + email + ' menjadi "' + roleBaru + '"?')) return;
+    callGAS('setUserRole', { email: email, role: roleBaru }, function (list) {
+      renderUsers(list);
+      showAlert('✅ Role <strong>' + esc(email) + '</strong> diubah menjadi <strong>' + esc(roleBaru) + '</strong>.', 'success');
+    }, onError);
+  }
+
+  function ubahStatus(email, statusBaru) {
+    var pesan = (statusBaru === 'nonaktif')
+      ? 'Nonaktifkan ' + email + '? Sesi yang sedang berjalan akan langsung diputus.'
+      : 'Aktifkan kembali ' + email + '?';
+    if (!confirm(pesan)) return;
+    callGAS('setUserStatus', { email: email, status: statusBaru }, function (list) {
+      renderUsers(list);
+      showAlert('✅ Status <strong>' + esc(email) + '</strong> menjadi <strong>' + esc(statusBaru) + '</strong>.', 'success');
+    }, onError);
+  }
+
+  function ubahKuota(email, kuotaSekarang, kadaluarsaSekarang) {
+    var k = prompt('Kuota generate untuk ' + email + '\n(0 = tanpa batas)', String(kuotaSekarang));
+    if (k === null) return;
+    if (isNaN(parseInt(k, 10)) || parseInt(k, 10) < 0) { alert('Kuota harus angka 0 atau lebih.'); return; }
+
+    var tgl = prompt('Tanggal kadaluarsa (YYYY-MM-DD).\nKosongkan kalau tidak ada batas.', kadaluarsaSekarang || '');
+    if (tgl === null) return;
+
+    callGAS('setUserKuota', { email: email, kuota: parseInt(k, 10), kadaluarsa: tgl.trim() }, function (list) {
+      renderUsers(list);
+      showAlert('✅ Kuota <strong>' + esc(email) + '</strong> diset ke <strong>' + esc(k) + '</strong>.', 'success');
+    }, onError);
+  }
+
+  function hapusUser(email) {
+    if (!confirm('HAPUS akun ' + email + '?\nTindakan ini tidak bisa dibatalkan.')) return;
+    callGAS('hapusUser', { email: email }, function (list) {
+      renderUsers(list);
+      showAlert('🗑 Akun <strong>' + esc(email) + '</strong> dihapus.', 'success');
+    }, onError);
+  }
+
+  function tambahUser() {
+    var email = el('inpUserEmail').value.trim();
+    var nama  = el('inpUserNama').value.trim();
+    var kode  = el('inpUserKode').value.trim();
+    var kuota = el('inpUserKuota').value.trim();
+    var role  = el('inpUserRole').value;
+
+    if (!email) { showAlert('Email wajib diisi.', 'error'); return; }
+
+    callGAS('tambahUser', {
+      email: email, nama: nama, kode: kode, kuota: kuota, role: role, kadaluarsa: ''
+    }, function (res) {
+      el('inpUserEmail').value = '';
+      el('inpUserNama').value = '';
+      el('inpUserKode').value = '';
+      el('inpUserKuota').value = '';
+      renderUsers(res.daftar || []);
+      showAlert('✅ User ditambahkan: <strong>' + esc(email) + '</strong><br>' +
+                'Kode akses: <strong>' + esc(res.kode) + '</strong> — kirimkan kode ini ke yang bersangkutan.', 'success');
+    }, onError);
   }
 
   // ======================================================
@@ -569,8 +949,10 @@
     el('selKelas').innerHTML = '<option value="">-- pilih mapel dulu --</option>';
     el('selTP').disabled = true;
     el('selTP').innerHTML = '<option value="">-- pilih kelas dulu --</option>';
-    el('selJumlah').disabled = true;
-    el('selJumlah').innerHTML = '<option value="">-- pilih TP dulu --</option>';
+    el('selJumlahPg').disabled = true;
+    el('selJumlahPg').innerHTML = '<option value="">-- pilih TP dulu --</option>';
+    el('selJumlahEsai').disabled = true;
+    el('selJumlahEsai').innerHTML = '<option value="">-- pilih TP dulu --</option>';
     el('selLevel').disabled = true;
     el('selLevel').innerHTML = '<option value="">-- pilih TP dulu --</option>';
     el('btnGenerate').disabled = true;
@@ -602,7 +984,8 @@
     el('selTP').disabled = true;
     el('selTP').innerHTML = '<option value="">-- pilih kelas dulu --</option>';
     el('tpDetail').style.display = 'none';
-    el('selJumlah').disabled = true;
+    el('selJumlahPg').disabled = true;
+    el('selJumlahEsai').disabled = true;
     el('selLevel').disabled = true;
     el('btnGenerate').disabled = true;
 
@@ -639,7 +1022,8 @@
     selectedTP = null; tpAktif = null;
 
     el('tpDetail').style.display = 'none';
-    el('selJumlah').disabled = true;
+    el('selJumlahPg').disabled = true;
+    el('selJumlahEsai').disabled = true;
     el('selLevel').disabled = true;
     el('btnGenerate').disabled = true;
 
@@ -679,8 +1063,10 @@
     if (kunci === '') {
       selectedTP = null; tpAktif = null;
       el('tpDetail').style.display = 'none';
-      el('selJumlah').disabled = true;
-      el('selJumlah').innerHTML = '<option value="">-- pilih TP dulu --</option>';
+      el('selJumlahPg').disabled = true;
+      el('selJumlahPg').innerHTML = '<option value="">-- pilih TP dulu --</option>';
+      el('selJumlahEsai').disabled = true;
+      el('selJumlahEsai').innerHTML = '<option value="">-- pilih TP dulu --</option>';
       el('selLevel').disabled = true;
       el('selLevel').innerHTML = '<option value="">-- pilih TP dulu --</option>';
       el('btnGenerate').disabled = true;
@@ -692,7 +1078,8 @@
 
     if (!selectedTP) {
       el('tpDetail').style.display = 'none';
-      el('selJumlah').disabled = true;
+      el('selJumlahPg').disabled = true;
+      el('selJumlahEsai').disabled = true;
       el('selLevel').disabled = true;
       el('btnGenerate').disabled = true;
       showAlert('⚠️ Daftar TP baru saja dimuat ulang. Silakan pilih TP sekali lagi.', 'error');
@@ -704,14 +1091,16 @@
     el('lblLevelSheet').textContent = selectedTP.level || 'C1-C4';
     el('tpDetail').style.display = 'block';
 
-    isiPilihanJumlah(selectedTP.jumlahSoal);
+    isiPilihanJumlah('selJumlahPg', selectedTP.jumlahSoal);
+    isiPilihanJumlah('selJumlahEsai', Math.min(5, Math.max(3, Math.round((parseInt(selectedTP.jumlahSoal, 10) || 10) / 3))));
     isiPilihanLevel(selectedTP.level);
+    aktifkanJumlahSesuaiTipe();
 
     el('btnGenerate').disabled = false;
     el('btnGenerate').textContent = '⚡ Generate Soal via AI';
   }
 
-  function isiPilihanJumlah(def) {
+  function isiPilihanJumlah(idSelect, def) {
     var opsi = [3, 5, 10, 15, 20, 25, 30, 40, 50];
     var d = parseInt(def, 10) || 10;
     if (opsi.indexOf(d) === -1) opsi.push(d);
@@ -722,8 +1111,7 @@
       html += '<option value="' + opsi[i] + '"' + (opsi[i] === d ? ' selected' : '') + '>' +
               opsi[i] + ' soal' + (opsi[i] === d ? '  (disarankan)' : '') + '</option>';
     }
-    el('selJumlah').innerHTML = html;
-    el('selJumlah').disabled = false;
+    el(idSelect).innerHTML = html;
   }
 
   function isiPilihanLevel(levelSheet) {
@@ -749,6 +1137,46 @@
     el('selLevel').disabled = false;
   }
 
+  // >>> LANJUT BAGIAN 3/3 (tipe soal, generate, preview, PDF) <<<
+  // ======================================================
+  // PILIH TIPE SOAL
+  // ======================================================
+  function normTipeJs(t) {
+    return (String(t || '').toUpperCase() === 'ESAI') ? 'ESAI' : 'PG';
+  }
+
+  function pilihTipe(t) {
+    if (sedangProses) return;
+    tipeDipilih = t;
+
+    var segs = document.querySelectorAll('#opsiTipe .seg');
+    for (var i = 0; i < segs.length; i++) {
+      segs[i].className = 'seg' +
+        (segs[i].getAttribute('data-tipe') === t ? ' aktif' : '');
+    }
+    aktifkanJumlahSesuaiTipe(false);
+  }
+
+  function aktifkanJumlahSesuaiTipe(isBusy) {
+    var ada  = !!selectedTP;
+    var pakaiPg   = (tipeDipilih === 'PG'   || tipeDipilih === 'KEDUANYA');
+    var pakaiEsai = (tipeDipilih === 'ESAI' || tipeDipilih === 'KEDUANYA');
+
+    el('wrapJumlahPg').style.display   = pakaiPg   ? 'block' : 'none';
+    el('wrapJumlahEsai').style.display = pakaiEsai ? 'block' : 'none';
+
+    el('selJumlahPg').disabled   = !ada || !pakaiPg   || !!isBusy;
+    el('selJumlahEsai').disabled = !ada || !pakaiEsai || !!isBusy;
+  }
+
+  function hitungTipe(t) {
+    var n = 0;
+    for (var i = 0; i < generatedSoalList.length; i++) {
+      if (normTipeJs(generatedSoalList[i].tipe) === t) n++;
+    }
+    return n;
+  }
+
   // ======================================================
   // PROGRES & STATUS
   // ======================================================
@@ -770,8 +1198,12 @@
     el('selMapel').disabled = isBusy;
     el('selKelas').disabled = isBusy || !selectedMapel;
     el('selTP').disabled = isBusy || !selectedKelas;
-    el('selJumlah').disabled = isBusy || !selectedTP;
     el('selLevel').disabled = isBusy || !selectedTP;
+
+    var segs = document.querySelectorAll('#opsiTipe .seg');
+    for (var i = 0; i < segs.length; i++) segs[i].disabled = isBusy;
+
+    aktifkanJumlahSesuaiTipe(isBusy);
 
     var btn = el('btnGenerate');
     btn.disabled = isBusy || !selectedTP;
@@ -883,14 +1315,24 @@
   }
 
   // ======================================================
-  // GENERATE SOAL
+  // GENERATE SOAL (antrian per tipe: PG lalu Esai)
   // ======================================================
+  var antrianGenerate = [];    // [{ tipe:'PG', target:10 }, { tipe:'ESAI', target:5 }]
+  var targetTotal = 0;
+  var indeksAntrian = 0;
+
   function generateSoal() {
     if (!selectedTP) { showAlert('Pilih TP terlebih dahulu.', 'error'); return; }
     if (sedangProses) return;
 
-    var target = parseInt(el('selJumlah').value, 10);
-    if (!target) { showAlert('Tentukan jumlah soal terlebih dahulu.', 'error'); return; }
+    var jumlahPg = 0, jumlahEsai = 0;
+    if (tipeDipilih === 'PG'   || tipeDipilih === 'KEDUANYA') jumlahPg   = parseInt(el('selJumlahPg').value, 10) || 0;
+    if (tipeDipilih === 'ESAI' || tipeDipilih === 'KEDUANYA') jumlahEsai = parseInt(el('selJumlahEsai').value, 10) || 0;
+
+    if (jumlahPg <= 0 && jumlahEsai <= 0) {
+      showAlert('Tentukan jumlah soal terlebih dahulu.', 'error');
+      return;
+    }
 
     var levelPilih = el('selLevel').value;
 
@@ -900,20 +1342,37 @@
     }
     if (levelPilih) tpAktif.level = levelPilih;
 
+    antrianGenerate = [];
+    if (jumlahPg   > 0) antrianGenerate.push({ tipe: 'PG',   target: jumlahPg });
+    if (jumlahEsai > 0) antrianGenerate.push({ tipe: 'ESAI', target: jumlahEsai });
+
+    targetTotal = jumlahPg + jumlahEsai;
+    indeksAntrian = 0;
     generatedSoalList = [];
     el('previewArea').style.display = 'none';
     setBusy(true, '⏳ Memproses AI...');
-    showProgress(0, target);
+    showProgress(0, targetTotal);
 
-    showAlert('Menggenerasi <strong>' + target + ' soal</strong> · Level: <strong>' +
-              esc(tpAktif.level) + '</strong> · ' + BATCH_SIZE +
-              ' soal per batch. Mohon tunggu dan jangan tutup halaman ini…');
+    showAlert('Menggenerasi <strong>' + targetTotal + ' soal</strong>' +
+              (jumlahPg ? ' · ' + jumlahPg + ' pilihan ganda' : '') +
+              (jumlahEsai ? ' · ' + jumlahEsai + ' esai' : '') +
+              ' · Level: <strong>' + esc(tpAktif.level) + '</strong>.' +
+              ' Mohon tunggu dan jangan tutup halaman ini…');
 
-    jalanBatchBerikutnya(target);
+    jalanBatchBerikutnya();
   }
 
-  function jalanBatchBerikutnya(target) {
-    if (generatedSoalList.length >= target) { selesaikanGenerate(target); return; }
+  function jalanBatchBerikutnya() {
+    if (indeksAntrian >= antrianGenerate.length) { selesaikanGenerate(); return; }
+
+    var tugas = antrianGenerate[indeksAntrian];
+    var sudahTipeIni = hitungTipe(tugas.tipe);
+
+    if (sudahTipeIni >= tugas.target) {
+      indeksAntrian++;
+      jalanBatchBerikutnya();
+      return;
+    }
 
     var tp = tpRingkas(tpAktif || selectedTP);
     if (!tp) {
@@ -923,21 +1382,35 @@
       return;
     }
 
-    var butuh = Math.min(BATCH_SIZE, target - generatedSoalList.length);
+    var ukuran = (tugas.tipe === 'ESAI') ? BATCH_ESAI : BATCH_PG;
+    var butuh = Math.min(ukuran, tugas.target - sudahTipeIni);
 
     callGAS('generateSoalBatch', {
       tpData: tp,
       level: tp.level,
       jumlah: butuh,
+      tipe: tugas.tipe,
       soalSebelumnya: generatedSoalList
     }, function (batch) {
-      if (batch && batch.length) generatedSoalList = generatedSoalList.concat(batch);
-      showProgress(generatedSoalList.length, target);
+      if (batch && batch.length) {
+        for (var i = 0; i < batch.length; i++) {
+          batch[i].tipe = normTipeJs(batch[i].tipe || tugas.tipe);
+        }
+        generatedSoalList = generatedSoalList.concat(batch);
+      }
 
-      if (!batch || !batch.length) { selesaikanGenerate(target); return; }
-      if (generatedSoalList.length >= target) { selesaikanGenerate(target); return; }
+      showProgress(generatedSoalList.length, targetTotal);
 
-      jedaBatch(BATCH_DELAY_MS, target);
+      if (!batch || !batch.length) {
+        // tipe ini tidak menghasilkan apa-apa -> lanjut ke tipe berikutnya
+        indeksAntrian++;
+        jalanBatchBerikutnya();
+        return;
+      }
+
+      if (generatedSoalList.length >= targetTotal) { selesaikanGenerate(); return; }
+
+      jedaBatch(BATCH_DELAY_MS, jalanBatchBerikutnya);
     }, function (err) {
       setBusy(false, '⚡ Generate Soal via AI');
       hideProgress();
@@ -959,7 +1432,7 @@
     });
   }
 
-  function jedaBatch(ms, target) {
+  function jedaBatch(ms, lanjut) {
     var sisa = Math.ceil(ms / 1000);
     var ptext = el('progressText');
     var isiAwal = ptext.textContent;
@@ -970,12 +1443,12 @@
       if (sisa <= 0) {
         clearInterval(timer);
         ptext.textContent = isiAwal;
-        jalanBatchBerikutnya(target);
+        lanjut();
       }
     }, 1000);
   }
 
-  function selesaikanGenerate(target) {
+  function selesaikanGenerate() {
     if (!generatedSoalList.length) {
       setBusy(false, '⚡ Generate Soal via AI');
       hideProgress();
@@ -983,8 +1456,7 @@
       return;
     }
 
-    generatedSoalList = generatedSoalList.slice(0, target);
-    showProgress(generatedSoalList.length, target);
+    showProgress(generatedSoalList.length, generatedSoalList.length);
     showAlert('Menyiapkan gambar & menyimpan ke spreadsheet...');
 
     var tpSimpan = tpRingkas(tpAktif || selectedTP);
@@ -1004,11 +1476,20 @@
 
         setBusy(false, '🔁 Generate Ulang');
         hideProgress();
-        showAlert('✅ Berhasil! ' + generatedSoalList.length +
-                  ' soal tersimpan di sheet "Bank Soal & Latihan".', 'success');
+
+        var nPg = hitungTipe('PG'), nEsai = hitungTipe('ESAI');
+        var rincian = [];
+        if (nPg) rincian.push(nPg + ' pilihan ganda');
+        if (nEsai) rincian.push(nEsai + ' esai');
+
+        showAlert('✅ Berhasil! ' + rincian.join(' + ') +
+                  ' tersimpan di sheet "Bank Soal & Latihan".', 'success');
         renderPreview();
 
-        callGAS('cekSesi', {}, function (info) { perbaruiKuota(info); }, function () {});
+        callGAS('cekSesi', {}, function (info) {
+          perbaruiKuota(info);
+          terapkanRole(info);
+        }, function () {});
       }, function (err) {
         setBusy(false, '🔁 Generate Ulang');
         hideProgress();
@@ -1024,20 +1505,41 @@
   function renderPreview() {
     el('lblTotalSoal').textContent = generatedSoalList.length;
 
+    var nPg = 0, nEsai = 0;
     var html = '';
+
     for (var i = 0; i < generatedSoalList.length; i++) {
       var s = generatedSoalList[i];
-      html += '<div class="soal-item">' +
+      var esai = (normTipeJs(s.tipe) === 'ESAI');
+      if (esai) nEsai++; else nPg++;
+
+      html += '<div class="soal-item' + (esai ? ' esai' : '') + '">' +
         '<div class="soal-head">' +
           '<strong>' + (i + 1) + '. ' + esc(s.teksPertanyaan) + '</strong>' +
-          '<span class="badge">' + esc(s.levelSoal || 'C2') + '</span>' +
+          '<span class="badge' + (esai ? ' esai' : '') + '">' +
+            (esai ? 'ESAI' : 'PG') + ' · ' + esc(s.levelSoal || 'C2') + '</span>' +
         '</div>' +
         (s.bersusun ? tabelBersusun(s.bersusun) : '') +
-        htmlGambarSoal(s) +
-        '<div class="opsi">A. ' + esc(s.opsiA) + '<br>B. ' + esc(s.opsiB) +
-        '<br>C. ' + esc(s.opsiC) + '<br>D. ' + esc(s.opsiD) + '</div>' +
-        '<div class="kunci"><strong>Kunci: ' + esc(s.kunci) + '</strong> — ' + esc(s.pembahasan) + '</div>' +
-      '</div>';
+        htmlGambarSoal(s);
+
+      if (esai) {
+        html += '<div class="kunci esai">' +
+          '<strong>Kunci (' + (parseInt(s.skorMaks, 10) || 3) + ' poin):</strong> ' + esc(s.kunci) +
+          (s.rubrik ? '<br><strong>Rubrik:</strong> ' + esc(s.rubrik) : '') +
+          (s.pembahasan ? '<br><strong>Catatan:</strong> ' + esc(s.pembahasan) : '') +
+          '</div>';
+      } else {
+        html += '<div class="opsi">A. ' + esc(s.opsiA) + '<br>B. ' + esc(s.opsiB) +
+                '<br>C. ' + esc(s.opsiC) + '<br>D. ' + esc(s.opsiD) + '</div>' +
+                '<div class="kunci"><strong>Kunci: ' + esc(s.kunci) + '</strong> — ' + esc(s.pembahasan) + '</div>';
+      }
+
+      html += '</div>';
+    }
+
+    if (nPg && nEsai) {
+      html = '<div style="font-size:11.5px;color:#718096;margin-bottom:8px;">' +
+             nPg + ' soal pilihan ganda · ' + nEsai + ' soal esai</div>' + html;
     }
 
     el('soalList').innerHTML = html;
@@ -1055,10 +1557,13 @@
 
     var kirim = generatedSoalList.map(function (s) {
       return {
+        tipe: normTipeJs(s.tipe),
         teksPertanyaan: s.teksPertanyaan,
-        opsiA: s.opsiA, opsiB: s.opsiB, opsiC: s.opsiC, opsiD: s.opsiD,
-        kunci: s.kunci,
-        pembahasan: s.pembahasan,
+        opsiA: s.opsiA || '', opsiB: s.opsiB || '', opsiC: s.opsiC || '', opsiD: s.opsiD || '',
+        kunci: s.kunci || '',
+        pembahasan: s.pembahasan || '',
+        rubrik: s.rubrik || '',
+        skorMaks: s.skorMaks || '',
         levelSoal: s.levelSoal,
         bersusun: s.bersusun || null,
         gambarPng: (s.gambarPng && s.gambarPng.length < 120000) ? s.gambarPng : '',
@@ -1075,7 +1580,3 @@
       onError(new Error('Gagal membuat PDF: ' + err.message));
     });
   }
-</script>
-
-</body>
-</html>
