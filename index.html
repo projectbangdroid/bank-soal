@@ -511,6 +511,20 @@
   // ======================================================
   // PILIHAN BERTINGKAT: MAPEL -> KELAS -> TP
   // ======================================================
+  // Kunci stabil sebuah TP. Jangan pakai index array: daftar TP bisa
+  // diperbarui dari server saat pengguna sedang/sudah memilih.
+  function kunciTP(t) {
+    return String(t.mapel || '').trim() + '||' + String(t.kelas || '').trim() +
+           '||' + String(t.kodeTp || '').trim();
+  }
+
+  function cariTPDiDaftar(kunci) {
+    for (var i = 0; i < tpDataList.length; i++) {
+      if (kunciTP(tpDataList[i]) === kunci) return tpDataList[i];
+    }
+    return null;
+  }
+
   function daftarUnik(list, key) {
     var hasil = [];
     for (var i = 0; i < list.length; i++) {
@@ -648,8 +662,9 @@
       var outline = String(t.outline || '');
       if (outline.length > 45) outline = outline.substring(0, 45) + '...';
 
-      html += '<option value="' + i + '">[' + esc(t.kodeTp) + '] ' + esc(outline) + '</option>';
-      idxs.push(i);
+      var kunci = kunciTP(t);
+      html += '<option value="' + esc(kunci) + '">[' + esc(t.kodeTp) + '] ' + esc(outline) + '</option>';
+      idxs.push(kunci);
     }
 
     selT.innerHTML = html;
@@ -659,9 +674,9 @@
   }
 
   function onTPChange() {
-    var idx = el('selTP').value;
+    var kunci = el('selTP').value;
 
-    if (idx === '') {
+    if (kunci === '') {
       selectedTP = null; tpAktif = null;
       el('tpDetail').style.display = 'none';
       el('selJumlah').disabled = true;
@@ -672,8 +687,17 @@
       return;
     }
 
-    selectedTP = tpDataList[idx];
+    selectedTP = cariTPDiDaftar(kunci);
     tpAktif = null;
+
+    if (!selectedTP) {
+      el('tpDetail').style.display = 'none';
+      el('selJumlah').disabled = true;
+      el('selLevel').disabled = true;
+      el('btnGenerate').disabled = true;
+      showAlert('⚠️ Daftar TP baru saja dimuat ulang. Silakan pilih TP sekali lagi.', 'error');
+      return;
+    }
 
     el('lblMapelKelas').textContent = selectedTP.mapel + ' / Kelas ' + selectedTP.kelas;
     el('lblOutline').textContent = selectedTP.outline || '-';
@@ -963,11 +987,13 @@
     showProgress(generatedSoalList.length, target);
     showAlert('Menyiapkan gambar & menyimpan ke spreadsheet...');
 
-    var kodeTp = (tpAktif || selectedTP).kodeTp;
+    var tpSimpan = tpRingkas(tpAktif || selectedTP);
+    var kodeTp = tpSimpan.kodeTp;
 
     siapkanGambar(generatedSoalList, function () {
       callGAS('simpanSoal', {
         kodeTp: kodeTp,
+        tpData: tpSimpan,
         listSoal: generatedSoalList
       }, function (daftarHasil) {
         if (daftarHasil && daftarHasil.length) {
