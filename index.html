@@ -147,6 +147,26 @@
 
   .foot { text-align: center; font-size: 11.5px; color: #a0aec0; padding: 6px 0 20px; }
   .foot a { color: #718096; }
+
+  /* ---------- MODAL TOKEN / QRIS ---------- */
+  .modal-token { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 60;
+                 display: flex; align-items: center; justify-content: center; padding: 18px; overflow-y: auto; }
+  .modal-card { background: #fff; border-radius: 14px; width: 100%; max-width: 460px; padding: 20px;
+                box-shadow: 0 18px 50px rgba(0,0,0,.35); margin: auto; }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .modal-head h3 { font-size: 16px; }
+  .modal-x { border: none; background: transparent; font-size: 16px; cursor: pointer; color: #718096; }
+  .modal-sub { font-size: 13px; color: #4a5568; margin: 8px 0; }
+  .paket-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+  .paket-btn { border: 1px solid #cbd5e0; background: #fff; border-radius: 10px; padding: 12px; cursor: pointer;
+               font-size: 13px; text-align: center; }
+  .paket-btn:hover { border-color: #3182ce; background: #ebf8ff; }
+  .paket-btn strong { display: block; font-size: 16px; color: #2b6cb0; }
+  #qrArea { text-align: center; margin-top: 12px; }
+  #qrImg { width: 220px; height: 220px; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc; }
+  .qr-info { font-size: 13px; font-weight: 700; margin-top: 6px; }
+  .qr-status { font-size: 12.5px; color: #718096; margin: 6px 0; }
+  .riwayat-item { display: flex; justify-content: space-between; padding: 9px 10px; border-bottom: 1px solid #edf2f7; font-size: 12.5px; }
 </style>
 </head>
 <body>
@@ -211,7 +231,9 @@
     <div class="hero-user">
       <span class="chip">👤 <span id="lblNama">-</span></span>
       <span class="chip admin" id="lblRole" style="display:none;">ADMIN</span>
-      <span class="chip">🎯 Sisa kuota: <strong id="lblKuota">-</strong></span>
+      <span class="chip">🪙 Saldo: <strong id="lblSaldo">-</strong> token</span>
+      <a class="chip aksi" id="btnIsiToken" href="#" onclick="bukaIsiToken();return false;">🪙 Isi Token</a>
+      <a class="chip aksi" id="btnRiwayat" href="#" onclick="bukaRiwayatToken();return false;">🧾 Riwayat</a>
       <a class="chip aksi" id="btnKelolaUser" href="#" style="display:none;"
          onclick="bukaKelolaUser();return false;">👥 Kelola User</a>
       <a class="chip danger" href="#" onclick="keluar();return false;">Keluar</a>
@@ -240,11 +262,12 @@
             <th>Status</th>
             <th>Kuota</th>
             <th>Terpakai</th>
+            <th>Saldo</th>
             <th>Aksi</th>
           </tr>
         </thead>
         <tbody id="usersBody">
-          <tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:18px;">Memuat data user…</td></tr>
+          <tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:18px;">Memuat data user…</td></tr>
         </tbody>
       </table>
     </div>
@@ -362,6 +385,36 @@
   </div>
 </div>
 
+<!-- ================= MODAL ISI TOKEN (QRIS) ================= -->
+<div id="modalToken" class="modal-token" style="display:none;">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>🪙 Isi Token</h3>
+      <button type="button" class="modal-x" onclick="tutupIsiToken()">✕</button>
+    </div>
+    <p class="modal-sub">Pilih paket token:</p>
+    <div id="paketList" class="paket-list"></div>
+    <div id="qrArea" style="display:none;">
+      <p class="modal-sub">Scan QRIS ini dengan aplikasi bank / e-wallet Anda:</p>
+      <img id="qrImg" alt="QRIS">
+      <p id="qrInfo" class="qr-info"></p>
+      <p id="qrStatus" class="qr-status">Menunggu pembayaran ⏳</p>
+      <button type="button" class="btn-mini" onclick="cekTopupStatus(true)">🔄 Cek Status</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= MODAL RIWAYAT TOKEN ================= -->
+<div id="modalRiwayat" class="modal-token" style="display:none;">
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>🧾 Riwayat Token</h3>
+      <button type="button" class="modal-x" onclick="tutupRiwayatToken()">✕</button>
+    </div>
+    <div id="riwayatBody"></div>
+  </div>
+</div>
+
 <script>
   // >>> Isi Bagian 2/3 dan 3/3 di dalam tag <script> ini <<<
    // ======================================================
@@ -372,6 +425,8 @@
 
   var BATCH_PG       = 3;         // samakan dengan BATCH_PG di code.gs
   var BATCH_ESAI     = 2;         // samakan dengan BATCH_ESAI di code.gs
+  var batchPgAktif   = BATCH_PG;  // mengecil otomatis saat level C4 (reasoning)
+  var batchEsaiAktif = BATCH_ESAI;
   var BATCH_DELAY_MS = 15000;
   var TIMEOUT_MS     = 75000;
   var MAKS_COBA      = 3;
@@ -381,7 +436,7 @@
   // ======================================================
   // STATE
   // ======================================================
-  var SESSION = { token: '', nama: '', email: '', role: '' };
+  var SESSION = { token: '', nama: '', email: '', role: '', saldo: 0 };
   var tpDataList = [];
   var selectedMapel = '';
   var selectedKelas = '';
@@ -471,7 +526,7 @@
     el('layarLogin').style.display = 'none';
     el('layarApp').style.display = 'block';
     el('lblNama').textContent = SESSION.nama || 'Pengguna';
-    el('lblKuota').textContent = '…';
+    el('lblSaldo').textContent = '…';
     terapkanRole({ role: SESSION.role });
 
     loadTPData();
@@ -484,7 +539,7 @@
       simpanSesi();
       el('lblNama').textContent = info.nama || 'Pengguna';
       terapkanRole(info);
-      perbaruiKuota(info);
+      perbaruiSaldo(info);
     }, function (err) {
       var m = String(err && err.message ? err.message : err);
 
@@ -512,7 +567,7 @@
   }
 
   function hapusSesi() {
-    SESSION = { token: '', nama: '', email: '', role: '' };
+    SESSION = { token: '', nama: '', email: '', role: '', saldo: 0 };
     localStorage.removeItem('BSAI_TOKEN');
     localStorage.removeItem('BSAI_NAMA');
     localStorage.removeItem('BSAI_EMAIL');
@@ -541,13 +596,14 @@
     el('layarApp').style.display = 'block';
     el('lblNama').textContent = (info && info.nama) ? info.nama : 'Pengguna';
     terapkanRole(info);
-    perbaruiKuota(info);
+    perbaruiSaldo(info);
   }
 
-  function perbaruiKuota(info) {
+  function perbaruiSaldo(info) {
     if (!info) return;
-    if (!info.kuota) { el('lblKuota').textContent = '∞'; return; }
-    el('lblKuota').textContent = info.sisa + ' / ' + info.kuota;
+    var saldo = (typeof info.saldo === 'number') ? info.saldo : (parseInt(info.saldo, 10) || 0);
+    SESSION.saldo = saldo;
+    el('lblSaldo').textContent = saldo;
   }
 
   function masuk() {
@@ -622,7 +678,7 @@
       tampilkanApp(info);
       loadTPData();
       showAlert('✅ Selamat datang, <strong>' + esc(info.nama) + '</strong>! ' +
-                'Kuota Anda: <strong>' + (info.kuota ? info.kuota + ' generate' : 'tanpa batas') + '</strong>.', 'success');
+                'Bonus <strong>' + (info.saldo || 0) + ' token</strong> sudah masuk ke saldo Anda.', 'success');
     }, function (err) {
       sedangLogin = false;
       btn.disabled = false;
@@ -760,7 +816,7 @@
   function muatUser() {
     if (sedangMuatUser) return;
     sedangMuatUser = true;
-    el('usersBody').innerHTML = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:18px;">Memuat data user…</td></tr>';
+    el('usersBody').innerHTML = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:18px;">Memuat data user…</td></tr>';
 
     callGAS('listUsers', {}, function (list) {
       sedangMuatUser = false;
@@ -777,7 +833,7 @@
     var html = '';
 
     if (!daftarUser.length) {
-      html = '<tr><td colspan="7" style="text-align:center;color:#94a3b8;padding:18px;">Belum ada user.</td></tr>';
+      html = '<tr><td colspan="8" style="text-align:center;color:#94a3b8;padding:18px;">Belum ada user.</td></tr>';
     } else {
       for (var i = 0; i < daftarUser.length; i++) {
         var u = daftarUser[i];
@@ -791,6 +847,7 @@
           '<td><span class="pill ' + esc(u.status) + '">' + esc(u.status) + '</span></td>' +
           '<td>' + (u.kuota === 0 ? '∞' : u.kuota) + '</td>' +
           '<td>' + u.terpakai + '</td>' +
+          '<td>🪙 ' + (u.saldo || 0) + '</td>' +
           '<td>' + tombolAksiUser(u, saya) + '</td>' +
         '</tr>';
       }
@@ -815,6 +872,9 @@
 
     t += '<button class="btn-mini" onclick="ubahKuota(\'' + esc(u.email) + '\',' + u.kuota +
          ',\'' + esc(u.kadaluarsa || '') + '\')">🎯 kuota</button>';
+
+    t += '<button class="btn-mini" onclick="ubahSaldo(\'' + esc(u.email) + '\',' + (u.saldo || 0) +
+         ')">🪙 saldo</button>';
 
     t += '<button class="btn-mini bahaya" onclick="hapusUser(\'' + esc(u.email) + '\')">🗑 hapus</button>';
 
@@ -851,6 +911,17 @@
     callGAS('setUserKuota', { email: email, kuota: parseInt(k, 10), kadaluarsa: tgl.trim() }, function (list) {
       renderUsers(list);
       showAlert('✅ Kuota <strong>' + esc(email) + '</strong> diset ke <strong>' + esc(k) + '</strong>.', 'success');
+    }, onError);
+  }
+
+  function ubahSaldo(email, saldoSekarang) {
+    var s = prompt('Saldo token untuk ' + email, String(saldoSekarang || 0));
+    if (s === null) return;
+    if (isNaN(parseInt(s, 10)) || parseInt(s, 10) < 0) { alert('Saldo harus angka 0 atau lebih.'); return; }
+
+    callGAS('setUserSaldo', { email: email, saldo: parseInt(s, 10) }, function (list) {
+      renderUsers(list);
+      showAlert('✅ Saldo <strong>' + esc(email) + '</strong> diset ke <strong>' + esc(s) + ' token</strong>.', 'success');
     }, onError);
   }
 
@@ -1338,6 +1409,11 @@
     }
     if (levelPilih) tpAktif.level = levelPilih;
 
+    // Level C4 (analisis) -> server pakai deepseek-reasoner; batch dikecilkan agar tidak timeout
+    var pakaiReasoning = /C4/i.test(String(tpAktif.level || ''));
+    batchPgAktif   = pakaiReasoning ? 1 : BATCH_PG;
+    batchEsaiAktif = pakaiReasoning ? 1 : BATCH_ESAI;
+
     antrianGenerate = [];
     if (jumlahPg   > 0) antrianGenerate.push({ tipe: 'PG',   target: jumlahPg });
     if (jumlahEsai > 0) antrianGenerate.push({ tipe: 'ESAI', target: jumlahEsai });
@@ -1378,7 +1454,7 @@
       return;
     }
 
-    var ukuran = (tugas.tipe === 'ESAI') ? BATCH_ESAI : BATCH_PG;
+    var ukuran = (tugas.tipe === 'ESAI') ? batchEsaiAktif : batchPgAktif;
     var butuh = Math.min(ukuran, tugas.target - sudahTipeIni);
 
     callGAS('generateSoalBatch', {
@@ -1413,13 +1489,18 @@
       if (generatedSoalList.length) renderPreview();
 
       var pesan = String(err && err.message ? err.message : err);
+      if (pesan.indexOf('TOKEN') !== -1) {
+        showAlert('🪙 ' + esc(pesan.replace(/^TOKEN:\s*/, '')) +
+          ' <a href="#" onclick="bukaIsiToken();return false;">Isi token sekarang</a>.', 'error');
+        return;
+      }
       if (pesan.indexOf('KUOTA') !== -1) {
         showAlert('🎯 ' + esc(pesan.replace(/^KUOTA:\s*/, '')) +
           ' Hubungi admin untuk menambah kuota.', 'error');
         return;
       }
-      if (pesan.indexOf('Limit Groq') !== -1 || pesan.indexOf('429') !== -1) {
-        showAlert('⏳ Kuota token per menit Groq tercapai. Soal yang sudah jadi (' +
+      if (pesan.indexOf('Limit AI') !== -1 || pesan.indexOf('Limit Groq') !== -1 || pesan.indexOf('429') !== -1) {
+        showAlert('⏳ Limit API AI tercapai. Soal yang sudah jadi (' +
                   generatedSoalList.length + ') tetap tampil. Tunggu ±1 menit lalu klik ' +
                   '<strong>Generate Ulang</strong>.', 'error');
         return;
@@ -1483,7 +1564,7 @@
         renderPreview();
 
         callGAS('cekSesi', {}, function (info) {
-          perbaruiKuota(info);
+          perbaruiSaldo(info);
           terapkanRole(info);
         }, function () {});
       }, function (err) {
@@ -1576,6 +1657,95 @@
       onError(new Error('Gagal membuat PDF: ' + err.message));
     });
   }
+
+  // ======================================================
+  // ISI TOKEN (QRIS) + RIWAYAT TOKEN
+  // ======================================================
+  var paketToken = [];
+  var orderAktif = null;
+  var timerTopup = null;
+
+  function bukaIsiToken() {
+    el('modalToken').style.display = 'flex';
+    el('qrArea').style.display = 'none';
+    if (paketToken.length) { renderPaket(); return; }
+    callGAS('getPaket', {}, function (res) {
+      paketToken = (res && res.paket) ? res.paket : [];
+      renderPaket();
+    }, function (err) { showAlert('⚠️ ' + esc(err.message), 'error'); });
+  }
+
+  function renderPaket() {
+    var html = '';
+    for (var i = 0; i < paketToken.length; i++) {
+      var p = paketToken[i];
+      html += '<button type="button" class="paket-btn" onclick="pilihPaket(\'' + esc(p.id) + '\')">' +
+              '<strong>' + p.tokens + ' token</strong>Rp ' + Number(p.price).toLocaleString('id-ID') + '</button>';
+    }
+    el('paketList').innerHTML = html;
+  }
+
+  function tutupIsiToken() {
+    el('modalToken').style.display = 'none';
+    if (timerTopup) { clearInterval(timerTopup); timerTopup = null; }
+  }
+
+  function pilihPaket(paketId) {
+    el('qrArea').style.display = 'none';
+    callGAS('buatTopup', { paketId: paketId }, function (res) {
+      orderAktif = res.orderId;
+      el('qrImg').src = res.qrUrl;
+      el('qrInfo').textContent = res.tokens + ' token — Rp ' + Number(res.price).toLocaleString('id-ID');
+      el('qrStatus').textContent = 'Menunggu pembayaran ⏳';
+      el('qrStatus').style.color = '#718096';
+      el('qrArea').style.display = 'block';
+      if (timerTopup) clearInterval(timerTopup);
+      timerTopup = setInterval(function () { cekTopupStatus(false); }, 3000);
+    }, function (err) {
+      showAlert('⚠️ Gagal membuat transaksi: ' + esc(err.message), 'error');
+    });
+  }
+
+  function cekTopupStatus(manual) {
+    if (!orderAktif) { if (manual) showAlert('Belum ada transaksi aktif.', 'error'); return; }
+    callGAS('cekTopup', { orderId: orderAktif }, function (res) {
+      if (res.paid) {
+        if (timerTopup) { clearInterval(timerTopup); timerTopup = null; }
+        el('qrStatus').textContent = '✅ Pembayaran diterima! Token bertambah.';
+        el('qrStatus').style.color = '#276749';
+        SESSION.saldo = res.saldo;
+        el('lblSaldo').textContent = res.saldo;
+        showAlert('✅ Pembayaran berhasil! Saldo Anda sekarang <strong>' + res.saldo + ' token</strong>.', 'success');
+      } else if (res.status === 'expire' || res.status === 'cancel' || res.status === 'deny') {
+        if (timerTopup) { clearInterval(timerTopup); timerTopup = null; }
+        el('qrStatus').textContent = '⛔ Transaksi ' + res.status + '. Silakan buat ulang.';
+        el('qrStatus').style.color = '#c53030';
+      } else if (manual) {
+        showAlert('Status: menunggu pembayaran.', '');
+      }
+    }, function (err) { if (manual) showAlert('⚠️ ' + esc(err.message), 'error'); });
+  }
+
+  function bukaRiwayatToken() {
+    el('modalRiwayat').style.display = 'flex';
+    el('riwayatBody').innerHTML = '<p class="modal-sub">Memuat…</p>';
+    callGAS('riwayatToken', {}, function (list) {
+      list = list || [];
+      if (!list.length) { el('riwayatBody').innerHTML = '<p class="modal-sub">Belum ada riwayat.</p>'; return; }
+      var html = '';
+      for (var i = 0; i < list.length; i++) {
+        var t = list[i];
+        var statusLabel = (t.status === 'paid') ? '✅ lunas' : (t.status === 'pending' ? '⏳ menunggu' : t.status);
+        html += '<div class="riwayat-item"><span>' + t.tokens + ' token · Rp ' +
+                Number(t.rupiah).toLocaleString('id-ID') + '</span><span>' + esc(statusLabel) + '</span></div>';
+      }
+      el('riwayatBody').innerHTML = html;
+    }, function (err) {
+      el('riwayatBody').innerHTML = '<p class="modal-sub" style="color:#c53030;">' + esc(err.message) + '</p>';
+    });
+  }
+
+  function tutupRiwayatToken() { el('modalRiwayat').style.display = 'none'; }
 
 </script>
 
