@@ -898,6 +898,8 @@
     t += '<button class="btn-mini" onclick="ubahSaldo(\'' + esc(u.email) + '\',' + (u.saldo || 0) +
          ')">🪙 saldo</button>';
 
+    t += '<button class="btn-mini" onclick="bukaRiwayatToken(\'' + esc(u.email) + '\')">📒 mutas</button>';
+
     t += '<button class="btn-mini bahaya" onclick="hapusUser(\'' + esc(u.email) + '\')">🗑 hapus</button>';
 
     return t;
@@ -1786,18 +1788,33 @@
     }, function (err) { if (manual) showAlert('⚠️ ' + esc(err.message), 'error'); });
   }
 
-  function bukaRiwayatToken() {
+  function bukaRiwayatToken(emailTarget) {
     el('modalRiwayat').style.display = 'flex';
     el('riwayatBody').innerHTML = '<p class="modal-sub">Memuat…</p>';
-    callGAS('riwayatToken', {}, function (list) {
+
+    var isi = {};
+    if (emailTarget) isi.email = emailTarget;
+
+    callGAS('mutasiToken', isi, function (list) {
       list = list || [];
-      if (!list.length) { el('riwayatBody').innerHTML = '<p class="modal-sub">Belum ada riwayat.</p>'; return; }
+      if (!list.length) { el('riwayatBody').innerHTML = '<p class="modal-sub">Belum ada mutasi token.</p>'; return; }
+
       var html = '';
+      if (emailTarget) {
+        html += '<p class="modal-sub">Mutasi untuk <strong>' + esc(emailTarget) + '</strong></p>';
+      }
       for (var i = 0; i < list.length; i++) {
         var t = list[i];
-        var statusLabel = (t.status === 'paid') ? '✅ lunas' : (t.status === 'pending' ? '⏳ menunggu' : t.status);
-        html += '<div class="riwayat-item"><span>' + t.tokens + ' token · Rp ' +
-                Number(t.rupiah).toLocaleString('id-ID') + '</span><span>' + esc(statusLabel) + '</span></div>';
+        var plus = (t.jumlah > 0);
+        var warna = plus ? '#276749' : '#c53030';
+        var tanda = plus ? '+' : '';
+        var waktu = String(t.waktu || '').replace('T', ' ').substring(0, 16);
+        html += '<div class="riwayat-item">' +
+                  '<span>' + esc(t.tipe) + (t.keterangan ? ' · ' + esc(t.keterangan) : '') +
+                    '<br><small style="color:#a0aec0">' + esc(waktu) + '</small></span>' +
+                  '<span style="color:' + warna + ';font-weight:700;text-align:right">' + tanda + t.jumlah +
+                    '<br><small style="color:#a0aec0;font-weight:400">sisa ' + t.saldoAkhir + '</small></span>' +
+                '</div>';
       }
       el('riwayatBody').innerHTML = html;
     }, function (err) {
