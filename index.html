@@ -689,8 +689,30 @@
 
   function keluar() {
     if (!confirm('Keluar dari aplikasi?')) return;
-    callGAS('logout', {}, function () { hapusSesi(); location.reload(); },
-                        function () { hapusSesi(); location.reload(); });
+
+    var tokenSimpan = SESSION.token;
+
+    // 1) Logout lokal SEKARANG (instan, tanpa menunggu server)
+    hapusSesi();
+    tampilkanLogin('');
+
+    // 2) Kabari server di belakang saja (tidak ditunggu). Aman kalau gagal.
+    if (tokenSimpan) {
+      try {
+        var urlK = GAS_API_URL + (GAS_API_URL.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
+        var lewatProxy = GAS_API_URL.charAt(0) === '/';
+        var isiK = { action: 'logout', token: tokenSimpan };
+        if (APP_TOKEN) isiK.appToken = APP_TOKEN;
+        fetch(urlK, {
+          method: 'POST',
+          headers: { 'Content-Type': lewatProxy ? 'application/json' : 'text/plain;charset=utf-8' },
+          body: JSON.stringify(isiK)
+        }).catch(function () {});
+      } catch (e) { /* abaikan */ }
+    }
+
+    // 3) Muat ulang tampilan
+    location.reload();
   }
 
   // ======================================================
