@@ -425,9 +425,9 @@
 
   var BATCH_PG       = 3;         // samakan dengan BATCH_PG di code.gs
   var BATCH_ESAI     = 2;         // samakan dengan BATCH_ESAI di code.gs
-  var batchPgAktif   = BATCH_PG;  // mengecil otomatis saat level C4 (reasoning)
-  var batchEsaiAktif = BATCH_ESAI;
-  var BATCH_DELAY_MS = 15000;
+  var BATCH_REASONER = 1;         // jalur C4 (reasoner): 1 soal per batch
+  var BATCH_DELAY_FAST_MS     = 2000;   // jeda antar batch jalur cepat
+  var BATCH_DELAY_REASONER_MS = 1000;   // jeda antar batch jalur reasoner
   var TIMEOUT_MS     = 75000;
   var MAKS_COBA      = 3;
   var MIN_KODE       = 6;         // samakan dengan MIN_PANJANG_KODE di code.gs
@@ -1388,6 +1388,28 @@
   var targetTotal = 0;
   var indeksAntrian = 0;
 
+  // ======================================================
+  // HYBRID + SPLIT
+  // ======================================================
+  // Proporsi soal yang diarahkan ke jalur penalaran (C4 / deepseek-reasoner).
+  function fraksiC4(level) {
+    var l = String(level || '').toUpperCase().replace(/\s/g, '');
+    if (l === 'C4') return 1;
+    if (l === 'C3-C4' || l === 'C4-C3') return 0.5;
+    if (l === 'C1-C4' || l === 'C4-C1') return 0.25;
+    return 0;
+  }
+
+  // Level untuk jalur cepat setelah C4 dipisah keluar.
+  function levelFastDari(level) {
+    var l = String(level || '').toUpperCase().replace(/\s/g, '');
+    if (l === 'C1-C4' || l === 'C4-C1') return 'C1-C3';
+    if (l === 'C3-C4' || l === 'C4-C3') return 'C3';
+    if (l === 'C4') return 'C3';
+    if (l === '') return 'C1-C3';
+    return l;
+  }
+
   function generateSoal() {
     if (!selectedTP) { showAlert('Pilih TP terlebih dahulu.', 'error'); return; }
     if (sedangProses) return;
@@ -1409,14 +1431,18 @@
     }
     if (levelPilih) tpAktif.level = levelPilih;
 
-    // Level C4 (analisis) -> server pakai deepseek-reasoner; batch dikecilkan agar tidak timeout
-    var pakaiReasoning = /C4/i.test(String(tpAktif.level || ''));
-    batchPgAktif   = pakaiReasoning ? 1 : BATCH_PG;
-    batchEsaiAktif = pakaiReasoning ? 1 : BATCH_ESAI;
+    // HYBRID + SPLIT: pecah target jadi jalur cepat (Groq) dan jalur reasoner (C4)
+    var fracC4 = fraksiC4(tpAktif.level);
+    var pgReason   = Math.round(jumlahPg * fracC4);
+    var esaiReason = Math.round(jumlahEsai * fracC4);
+    var pgFast     = jumlahPg - pgReason;
+    var esaiFast   = jumlahEsai - esaiReason;
 
     antrianGenerate = [];
-    if (jumlahPg   > 0) antrianGenerate.push({ tipe: 'PG',   target: jumlahPg });
-    if (jumlahEsai > 0) antrianGenerate.push({ tipe: 'ESAI', target: jumlahEsai });
+    if (pgFast   > 0) antrianGenerate.push({ tipe: 'PG',   target: pgFast,   jalur: 'fast',     level: levelFastDari(tpAktif.level), selesai: 0 });
+    if (esaiFast > 0) antrianGenerate.push({ tipe: 'ESAI', target: esaiFast, jalur: 'fast',     level: levelFastDari(tpAktif.level), selesai: 0 });
+    if (pgReason   > 0) antrianGenerate.push({ tipe: 'PG',   target: pgReason,   jalur: 'reasoner', level: 'C4', selesai: 0 });
+    if (esaiReason > 0) antrianGenerate.push({ tipe: 'ESAI', target: esaiReason, jalur: 'reasoner', level: 'C4', selesai: 0 });
 
     targetTotal = jumlahPg + jumlahEsai;
     indeksAntrian = 0;
@@ -1425,10 +1451,15 @@
     setBusy(true, '⏳ Memproses AI...');
     showProgress(0, targetTotal);
 
+    var nReason = pgReason + esaiReason;
+    var infoJalur = (nReason > 0)
+      ? ' · <strong>' + nReason + ' soal C4</strong> lewat DeepSeek (lebih lambat), sisanya cepat'
+      : ' · mode cepat';
+
     showAlert('Menggenerasi <strong>' + targetTotal + ' soal</strong>' +
               (jumlahPg ? ' · ' + jumlahPg + ' pilihan ganda' : '') +
               (jumlahEsai ? ' · ' + jumlahEsai + ' esai' : '') +
-              ' · Level: <strong>' + esc(tpAktif.level) + '</strong>.' +
+              ' · Level: <strong>' + esc(tpAktif.level) + '</strong>' + infoJalur + '.' +
               ' Mohon tunggu dan jangan tutup halaman ini…');
 
     jalanBatchBerikutnya();
@@ -1438,9 +1469,8 @@
     if (indeksAntrian >= antrianGenerate.length) { selesaikanGenerate(); return; }
 
     var tugas = antrianGenerate[indeksAntrian];
-    var sudahTipeIni = hitungTipe(tugas.tipe);
 
-    if (sudahTipeIni >= tugas.target) {
+    if (tugas.selesai >= tugas.target) {
       indeksAntrian++;
       jalanBatchBerikutnya();
       return;
@@ -1454,12 +1484,14 @@
       return;
     }
 
-    var ukuran = (tugas.tipe === 'ESAI') ? batchEsaiAktif : batchPgAktif;
-    var butuh = Math.min(ukuran, tugas.target - sudahTipeIni);
+    var ukuran = (tugas.jalur === 'reasoner') ? BATCH_REASONER
+                                             : ((tugas.tipe === 'ESAI') ? BATCH_ESAI : BATCH_PG);
+    var butuh = Math.min(ukuran, tugas.target - tugas.selesai);
 
     callGAS('generateSoalBatch', {
       tpData: tp,
-      level: tp.level,
+      level: tugas.level,
+      jalur: tugas.jalur,
       jumlah: butuh,
       tipe: tugas.tipe,
       soalSebelumnya: generatedSoalList
@@ -1469,20 +1501,26 @@
           batch[i].tipe = normTipeJs(batch[i].tipe || tugas.tipe);
         }
         generatedSoalList = generatedSoalList.concat(batch);
+        tugas.selesai += batch.length;
       }
 
       showProgress(generatedSoalList.length, targetTotal);
 
       if (!batch || !batch.length) {
-        // tipe ini tidak menghasilkan apa-apa -> lanjut ke tipe berikutnya
+        // tipe ini tidak menghasilkan apa-apa -> lanjut ke antrian berikutnya
         indeksAntrian++;
         jalanBatchBerikutnya();
         return;
       }
 
-      if (generatedSoalList.length >= targetTotal) { selesaikanGenerate(); return; }
+      if (tugas.selesai >= tugas.target) {
+        indeksAntrian++;
+        jalanBatchBerikutnya();
+        return;
+      }
 
-      jedaBatch(BATCH_DELAY_MS, jalanBatchBerikutnya);
+      var jeda = (tugas.jalur === 'reasoner') ? BATCH_DELAY_REASONER_MS : BATCH_DELAY_FAST_MS;
+      jedaBatch(jeda, jalanBatchBerikutnya);
     }, function (err) {
       setBusy(false, '⚡ Generate Soal via AI');
       hideProgress();
