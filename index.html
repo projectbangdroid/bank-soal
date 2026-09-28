@@ -148,6 +148,10 @@
   .foot { text-align: center; font-size: 11.5px; color: #a0aec0; padding: 6px 0 20px; }
   .foot a { color: #718096; }
 
+  /* ---------- INFO BIAYA TOKEN ---------- */
+  .info-token { margin-top: 12px; padding: 11px 13px; border-radius: 8px; font-size: 12px; line-height: 1.65;
+                background: #fffaf0; border: 1px solid #feebc8; color: #7b341e; }
+
   /* ---------- MODAL TOKEN / QRIS ---------- */
   .modal-token { position: fixed; inset: 0; background: rgba(15,23,42,.6); z-index: 60;
                  display: flex; align-items: center; justify-content: center; padding: 18px; overflow-y: auto; }
@@ -346,11 +350,11 @@
     <div class="grid2" style="margin-top:14px;">
       <div id="wrapJumlahPg">
         <label for="selJumlahPg">Jumlah Soal Pilihan Ganda</label>
-        <select id="selJumlahPg" disabled><option value="">-- pilih TP dulu --</option></select>
+        <select id="selJumlahPg" onchange="perbaruiBiaya()" disabled><option value="">-- pilih TP dulu --</option></select>
       </div>
       <div id="wrapJumlahEsai" style="display:none;">
         <label for="selJumlahEsai">Jumlah Soal Esai</label>
-        <select id="selJumlahEsai" disabled><option value="">-- pilih TP dulu --</option></select>
+        <select id="selJumlahEsai" onchange="perbaruiBiaya()" disabled><option value="">-- pilih TP dulu --</option></select>
       </div>
       <div>
         <label for="selLevel">Tingkat Level (Bloom)</label>
@@ -360,6 +364,13 @@
 
     <div class="btn-group">
       <button id="btnGenerate" class="act btn-primary" onclick="generateSoal()" disabled>⚡ Generate Soal</button>
+    </div>
+
+    <div class="info-token">
+      🪙 <strong>Cara token:</strong> tiap klik <strong>Generate Soal</strong> dihitung <strong>sekali</strong> saja —
+      ≤10 soal = <strong>1 token</strong>, 11–25 soal = <strong>2 token</strong>, 26–50 soal = <strong>3 token</strong>.
+      Memilih “Pilihan Ganda + Esai” sekaligus tetap dihitung sekali.
+      <div id="lblBiaya" style="margin-top:6px;font-weight:700;color:#2b6cb0;">Pilih TP dan jumlah soal untuk melihat biaya token.</div>
     </div>
 
     <div id="progressWrap" class="progress-wrap" style="display:none;">
@@ -393,6 +404,7 @@
       <button type="button" class="modal-x" onclick="tutupIsiToken()">✕</button>
     </div>
     <p class="modal-sub">Pilih paket token:</p>
+    <p class="modal-sub" style="font-size:11.5px;color:#718096;margin-top:-4px;">1 token dipakai untuk 1 kali klik <strong>Generate Soal</strong> (hingga 10 soal).</p>
     <div id="paketList" class="paket-list"></div>
     <div id="qrArea" style="display:none;">
       <p class="modal-sub">Scan QRIS ini dengan aplikasi bank / e-wallet Anda:</p>
@@ -1256,6 +1268,8 @@
 
     el('selJumlahPg').disabled   = !ada || !pakaiPg   || !!isBusy;
     el('selJumlahEsai').disabled = !ada || !pakaiEsai || !!isBusy;
+
+    perbaruiBiaya();
   }
 
   function hitungTipe(t) {
@@ -1432,6 +1446,71 @@
     return l;
   }
 
+  // ======================================================
+  // BIAYA TOKEN (dihitung SEKALI per klik Generate) + SESI
+  // ======================================================
+  var sesiGenerateId = null;
+
+  function hitungTotalPilihan() {
+    var n = 0;
+    if (tipeDipilih === 'PG' || tipeDipilih === 'KEDUANYA') n += parseInt(el('selJumlahPg').value, 10) || 0;
+    if (tipeDipilih === 'ESAI' || tipeDipilih === 'KEDUANYA') n += parseInt(el('selJumlahEsai').value, 10) || 0;
+    return n;
+  }
+
+  function biayaToken(n) {
+    if (n <= 0) return 0;
+    if (n <= 10) return 1;
+    if (n <= 25) return 2;
+    return 3;
+  }
+
+  function perbaruiBiaya() {
+    var box = el('lblBiaya');
+    if (!box) return;
+    var n = hitungTotalPilihan();
+    var b = biayaToken(n);
+    box.innerHTML = (n > 0)
+      ? 'Biaya: <strong>' + b + ' token</strong> untuk ' + n + ' soal (sekali klik Generate)'
+      : 'Pilih TP dan jumlah soal untuk melihat biaya token.';
+  }
+
+  function tanganiErrorGenerate(pesan) {
+    pesan = String(pesan || '');
+    setBusy(false, '⚡ Generate Soal');
+    hideProgress();
+
+    if (pesan.indexOf('TOKEN') !== -1) {
+      showAlert('🪙 ' + esc(pesan.replace(/^TOKEN:\s*/, '')) +
+        ' <a href="#" onclick="bukaIsiToken();return false;">Isi token sekarang</a>.', 'error');
+      return true;
+    }
+    if (pesan.indexOf('KUOTA') !== -1) {
+      showAlert('🎯 ' + esc(pesan.replace(/^KUOTA:\s*/, '')) + ' Hubungi admin.', 'error');
+      return true;
+    }
+    if (pesan.indexOf('SIBUK') !== -1 || pesan.indexOf('429') !== -1 || pesan.indexOf('503') !== -1) {
+      showAlert('⏳ Layanan sedang sibuk.' +
+        (generatedSoalList.length ? ' Soal yang sudah jadi (' + generatedSoalList.length + ') tetap tampil.' : '') +
+        ' Tunggu ±1 menit lalu klik <strong>Generate Ulang</strong>.', 'error');
+      return true;
+    }
+    return false;
+  }
+
+  function selesaikanSesiGenerate() {
+    if (!sesiGenerateId) return;
+    var id = sesiGenerateId;
+    sesiGenerateId = null;
+    callGAS('selesaiGenerate', { sesiId: id, jumlahHasil: generatedSoalList.length }, function (res) {
+      if (res && typeof res.saldo === 'number') { SESSION.saldo = res.saldo; el('lblSaldo').textContent = res.saldo; }
+      if (res && res.refund > 0) {
+        showAlert('🪙 Generate tidak menghasilkan soal, <strong>' + res.refund +
+                  ' token</strong> Anda dikembalikan. Saldo: ' + res.saldo + '.', 'error');
+      }
+    }, function () {});
+  }
+
   function generateSoal() {
     if (!selectedTP) { showAlert('Pilih TP terlebih dahulu.', 'error'); return; }
     if (sedangProses) return;
@@ -1469,22 +1548,33 @@
     targetTotal = jumlahPg + jumlahEsai;
     indeksAntrian = 0;
     generatedSoalList = [];
+    sesiGenerateId = null;
     el('previewArea').style.display = 'none';
-    setBusy(true, '⏳ Memproses...');
+    setBusy(true, '⏳ Menyiapkan...');
     showProgress(0, targetTotal);
+    showAlert('Menyiapkan <strong>' + targetTotal + ' soal</strong>…');
 
-    var nReason = pgReason + esaiReason;
-    var infoJalur = (nReason > 0)
-      ? ' · <strong>' + nReason + ' soal analisis</strong> butuh waktu lebih lama'
-      : ' · mode cepat';
+    callGAS('mulaiGenerate', { jumlah: targetTotal }, function (res) {
+      sesiGenerateId = res.sesiId;
+      if (typeof res.saldo === 'number') { SESSION.saldo = res.saldo; el('lblSaldo').textContent = res.saldo; }
 
-    showAlert('Menggenerasi <strong>' + targetTotal + ' soal</strong>' +
-              (jumlahPg ? ' · ' + jumlahPg + ' pilihan ganda' : '') +
-              (jumlahEsai ? ' · ' + jumlahEsai + ' esai' : '') +
-              ' · Level: <strong>' + esc(tpAktif.level) + '</strong>' + infoJalur + '.' +
-              ' Mohon tunggu dan jangan tutup halaman ini…');
+      setBusy(true, '⏳ Memproses...');
 
-    jalanBatchBerikutnya();
+      var nReason = pgReason + esaiReason;
+      var infoJalur = (nReason > 0)
+        ? ' · <strong>' + nReason + ' soal analisis</strong> butuh waktu lebih lama'
+        : '';
+
+      showAlert('Menggenerasi <strong>' + targetTotal + ' soal</strong>' +
+                (jumlahPg ? ' · ' + jumlahPg + ' pilihan ganda' : '') +
+                (jumlahEsai ? ' · ' + jumlahEsai + ' esai' : '') +
+                ' · Level: <strong>' + esc(tpAktif.level) + '</strong>' + infoJalur + '.' +
+                ' Mohon tunggu dan jangan tutup halaman ini…');
+
+      jalanBatchBerikutnya();
+    }, function (err) {
+      if (!tanganiErrorGenerate(err && err.message ? err.message : err)) onError(err);
+    });
   }
 
   function jalanBatchBerikutnya() {
@@ -1516,6 +1606,7 @@
       jalur: tugas.jalur,
       jumlah: butuh,
       tipe: tugas.tipe,
+      sesiId: sesiGenerateId,
       soalSebelumnya: generatedSoalList
     }, function (batch) {
       if (batch && batch.length) {
@@ -1548,24 +1639,8 @@
       hideProgress();
       if (generatedSoalList.length) renderPreview();
 
-      var pesan = String(err && err.message ? err.message : err);
-      if (pesan.indexOf('TOKEN') !== -1) {
-        showAlert('🪙 ' + esc(pesan.replace(/^TOKEN:\s*/, '')) +
-          ' <a href="#" onclick="bukaIsiToken();return false;">Isi token sekarang</a>.', 'error');
-        return;
-      }
-      if (pesan.indexOf('KUOTA') !== -1) {
-        showAlert('🎯 ' + esc(pesan.replace(/^KUOTA:\s*/, '')) +
-          ' Hubungi admin untuk menambah kuota.', 'error');
-        return;
-      }
-      if (pesan.indexOf('SIBUK') !== -1 || pesan.indexOf('429') !== -1 || pesan.indexOf('503') !== -1) {
-        showAlert('⏳ Layanan sedang sibuk. Soal yang sudah jadi (' +
-                  generatedSoalList.length + ') tetap tampil. Tunggu ±1 menit lalu klik ' +
-                  '<strong>Generate Ulang</strong>.', 'error');
-        return;
-      }
-      onError(err);
+      selesaikanSesiGenerate();
+      if (!tanganiErrorGenerate(err && err.message ? err.message : err)) onError(err);
     });
   }
 
@@ -1589,6 +1664,7 @@
     if (!generatedSoalList.length) {
       setBusy(false, '⚡ Generate Soal');
       hideProgress();
+      selesaikanSesiGenerate();
       showAlert('Tidak ada soal yang dihasilkan. Silakan klik Generate lagi.', 'error');
       return;
     }
@@ -1622,6 +1698,8 @@
         showAlert('✅ Berhasil! ' + rincian.join(' + ') +
                   ' tersimpan.', 'success');
         renderPreview();
+
+        selesaikanSesiGenerate();
 
         callGAS('cekSesi', {}, function (info) {
           perbaruiSaldo(info);
