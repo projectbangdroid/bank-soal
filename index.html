@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bank Soal AI Generator</title>
+<title>Bank Soal Generator</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif; }
@@ -174,8 +174,8 @@
 <!-- ================= LAYAR LOGIN / DAFTAR ================= -->
 <div id="layarLogin" class="login-wrap">
   <div class="login-card">
-    <div class="login-logo">🤖</div>
-    <h1>Bank Soal AI</h1>
+    <div class="login-logo">📘</div>
+    <h1>Bank Soal Generator</h1>
     <p class="sub">Masuk atau daftar untuk mulai membuat soal</p>
 
     <div class="tabs">
@@ -225,7 +225,7 @@
 
   <div class="hero">
     <div>
-      <h1>🤖 Bank Soal AI Generator</h1>
+      <h1>📘 Bank Soal Generator</h1>
       <p>Pilih mapel &amp; TP → tentukan tipe soal → cetak PDF siap fotokopi</p>
     </div>
     <div class="hero-user">
@@ -307,7 +307,7 @@
   <!-- ================= 1. PILIH MATERI ================= -->
   <div class="card">
     <h3 class="sec"><span class="num">1</span>Pilih Materi
-      <a class="muat" href="#" onclick="loadTPData();return false;">↻ Muat ulang dari sheet</a>
+      <a class="muat" href="#" onclick="loadTPData();return false;">↻ Muat ulang</a>
     </h3>
 
     <div class="grid3">
@@ -328,7 +328,7 @@
     <div id="tpDetail" class="detail" style="display:none;">
       <div class="row"><span class="k">Mapel / Kelas</span><span class="v" id="lblMapelKelas">-</span></div>
       <div class="row"><span class="k">Materi (Outline)</span><span class="v" id="lblOutline">-</span></div>
-      <div class="row"><span class="k">Level di sheet</span><span class="v" id="lblLevelSheet">-</span></div>
+      <div class="row"><span class="k">Level materi</span><span class="v" id="lblLevelMateri">-</span></div>
     </div>
   </div>
 
@@ -359,7 +359,7 @@
     </div>
 
     <div class="btn-group">
-      <button id="btnGenerate" class="act btn-primary" onclick="generateSoal()" disabled>⚡ Generate Soal via AI</button>
+      <button id="btnGenerate" class="act btn-primary" onclick="generateSoal()" disabled>⚡ Generate Soal</button>
     </div>
 
     <div id="progressWrap" class="progress-wrap" style="display:none;">
@@ -380,7 +380,7 @@
   </div>
 
   <div class="foot">
-    Data tersimpan otomatis ke Google Sheets &amp; Drive Anda ·
+    Data tersimpan otomatis di akun Anda ·
     <a href="#" onclick="tesKoneksi();return false;">Tes koneksi server</a>
   </div>
 </div>
@@ -420,17 +420,17 @@
    // ======================================================
   // KONFIGURASI
   // ======================================================
-  var GAS_API_URL = "/api/gas";   // atau URL /exec kalau memanggil Apps Script langsung
-  var APP_TOKEN   = "";           // samakan dengan APP_TOKEN di code.gs kalau dipakai
+  var GAS_API_URL = "/api/gas";   // endpoint layanan
+  var APP_TOKEN   = "";           // token aplikasi (opsional)
 
-  var BATCH_PG       = 3;         // samakan dengan BATCH_PG di code.gs
-  var BATCH_ESAI     = 2;         // samakan dengan BATCH_ESAI di code.gs
+  var BATCH_PG       = 3;         // ukuran batch pilihan ganda
+  var BATCH_ESAI     = 2;         // ukuran batch esai
   var BATCH_REASONER = 1;         // jalur C4 (reasoner): 1 soal per batch
   var BATCH_DELAY_FAST_MS     = 2000;   // jeda antar batch jalur cepat
   var BATCH_DELAY_REASONER_MS = 1000;   // jeda antar batch jalur reasoner
   var TIMEOUT_MS     = 75000;
   var MAKS_COBA      = 3;
-  var MIN_KODE       = 6;         // samakan dengan MIN_PANJANG_KODE di code.gs
+  var MIN_KODE       = 6;         // panjang kode akses minimum
   var CACHE_TP_KEY   = 'BSAI_TP_CACHE';
 
   // ======================================================
@@ -440,7 +440,7 @@
   var tpDataList = [];
   var selectedMapel = '';
   var selectedKelas = '';
-  var selectedTP = null;      // dari sheet
+  var selectedTP = null;      // dari data materi
   var tpAktif = null;         // salinan + level pilihan user
   var generatedSoalList = [];
   var daftarUser = [];
@@ -700,12 +700,12 @@
     if (tokenSimpan) {
       try {
         var urlK = GAS_API_URL + (GAS_API_URL.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
-        var lewatProxy = GAS_API_URL.charAt(0) === '/';
+        var lewatApi = GAS_API_URL.charAt(0) === '/';
         var isiK = { action: 'logout', token: tokenSimpan };
         if (APP_TOKEN) isiK.appToken = APP_TOKEN;
         fetch(urlK, {
           method: 'POST',
-          headers: { 'Content-Type': lewatProxy ? 'application/json' : 'text/plain;charset=utf-8' },
+          headers: { 'Content-Type': lewatApi ? 'application/json' : 'text/plain;charset=utf-8' },
           body: JSON.stringify(isiK)
         }).catch(function () {});
       } catch (e) { /* abaikan */ }
@@ -727,7 +727,7 @@
     if (APP_TOKEN) payload.appToken = APP_TOKEN;                 // kunci aplikasi (beda field!)
     if (SESSION.token && action !== 'login' && action !== 'daftar') payload.token = SESSION.token;
 
-    var pakaiProxy = GAS_API_URL.charAt(0) === '/';
+    var pakaiApi = GAS_API_URL.charAt(0) === '/';
     var url = GAS_API_URL + (GAS_API_URL.indexOf('?') === -1 ? '?' : '&') + 't=' + Date.now();
 
     var kontrol = new AbortController();
@@ -735,7 +735,7 @@
 
     fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': pakaiProxy ? 'application/json' : 'text/plain;charset=utf-8' },
+      headers: { 'Content-Type': pakaiApi ? 'application/json' : 'text/plain;charset=utf-8' },
       body: JSON.stringify(payload),
       signal: kontrol.signal
     })
@@ -749,7 +749,7 @@
         if (String(txt).indexOf('<html') !== -1 || String(txt).indexOf('<!DOCTYPE') !== -1) {
           throw new Error('__SEMENTARA__');
         }
-        throw new Error('Respons server bukan JSON: ' + String(txt).substring(0, 200));
+        throw new Error('Layanan tidak mengembalikan hasil yang valid.');
       }
 
       if (res.status === 'success') {
@@ -783,15 +783,14 @@
       }
 
       if (sementara) {
-        err = new Error('Server tidak merespons setelah ' + MAKS_COBA + ' percobaan. Cek proxy /api/gas, ' +
-          'refresh halaman, atau lihat Executions di editor Apps Script.');
+        err = new Error('Layanan sedang tidak dapat dihubungi. Muat ulang halaman lalu coba lagi.');
       }
       (onFail || onError)(err);
     });
   }
 
   function onError(err) {
-    setBusy(false, '⚡ Generate Soal via AI');
+    setBusy(false, '⚡ Generate Soal');
     hideProgress();
     showAlert('⚠️ ' + esc(err && err.message ? err.message : err), 'error');
   }
@@ -820,8 +819,7 @@
         });
       })
       .catch(function (e) {
-        alert('❌ Jalur server gagal: ' + e.message +
-              '\nPastikan api/gas.js ada di root repo dan deployment Vercel Ready.');
+        alert('❌ Layanan tidak dapat dihubungi. Coba muat ulang halaman.');
       });
   }
 
@@ -1054,7 +1052,7 @@
     var sel = el('selMapel');
 
     if (!mapel.length) {
-      sel.innerHTML = '<option value="">-- belum ada data TP. Isi sheet "Peta Konsep & TP" lalu klik ↻ Muat ulang --</option>';
+      sel.innerHTML = '<option value="">-- belum ada data materi. Klik ↻ Muat ulang --</option>';
       return;
     }
 
@@ -1179,7 +1177,7 @@
 
     el('lblMapelKelas').textContent = selectedTP.mapel + ' / Kelas ' + selectedTP.kelas;
     el('lblOutline').textContent = selectedTP.outline || '-';
-    el('lblLevelSheet').textContent = selectedTP.level || 'C1-C4';
+    el('lblLevelMateri').textContent = selectedTP.level || 'C1-C4';
     el('tpDetail').style.display = 'block';
 
     isiPilihanJumlah('selJumlahPg', selectedTP.jumlahSoal);
@@ -1188,7 +1186,7 @@
     aktifkanJumlahSesuaiTipe();
 
     el('btnGenerate').disabled = false;
-    el('btnGenerate').textContent = '⚡ Generate Soal via AI';
+    el('btnGenerate').textContent = '⚡ Generate Soal';
   }
 
   function isiPilihanJumlah(idSelect, def) {
@@ -1205,11 +1203,11 @@
     el(idSelect).innerHTML = html;
   }
 
-  function isiPilihanLevel(levelSheet) {
-    var l = String(levelSheet || 'C1-C4').toUpperCase().trim();
+  function isiPilihanLevel(levelMateri) {
+    var l = String(levelMateri || 'C1-C4').toUpperCase().trim();
 
     var opsi = [
-      ['',      'Sesuai sheet (' + l + ')'],
+      ['',      'Sesuai materi (' + l + ')'],
       ['C1',    'C1 — Mengingat'],
       ['C2',    'C2 — Memahami'],
       ['C3',    'C3 — Menerapkan'],
@@ -1415,7 +1413,7 @@
   // ======================================================
   // HYBRID + SPLIT
   // ======================================================
-  // Proporsi soal yang diarahkan ke jalur penalaran (C4 / deepseek-reasoner).
+  // Proporsi soal analisis (C4).
   function fraksiC4(level) {
     var l = String(level || '').toUpperCase().replace(/\s/g, '');
     if (l === 'C4') return 1;
@@ -1455,7 +1453,7 @@
     }
     if (levelPilih) tpAktif.level = levelPilih;
 
-    // HYBRID + SPLIT: pecah target jadi jalur cepat (Groq) dan jalur reasoner (C4)
+    // Pecah target jadi jalur cepat dan jalur analisis (C4)
     var fracC4 = fraksiC4(tpAktif.level);
     var pgReason   = Math.round(jumlahPg * fracC4);
     var esaiReason = Math.round(jumlahEsai * fracC4);
@@ -1472,12 +1470,12 @@
     indeksAntrian = 0;
     generatedSoalList = [];
     el('previewArea').style.display = 'none';
-    setBusy(true, '⏳ Memproses AI...');
+    setBusy(true, '⏳ Memproses...');
     showProgress(0, targetTotal);
 
     var nReason = pgReason + esaiReason;
     var infoJalur = (nReason > 0)
-      ? ' · <strong>' + nReason + ' soal C4</strong> lewat DeepSeek (lebih lambat), sisanya cepat'
+      ? ' · <strong>' + nReason + ' soal analisis</strong> butuh waktu lebih lama'
       : ' · mode cepat';
 
     showAlert('Menggenerasi <strong>' + targetTotal + ' soal</strong>' +
@@ -1502,7 +1500,7 @@
 
     var tp = tpRingkas(tpAktif || selectedTP);
     if (!tp) {
-      setBusy(false, '⚡ Generate Soal via AI');
+      setBusy(false, '⚡ Generate Soal');
       hideProgress();
       showAlert('TP tidak ditemukan. Silakan pilih TP lagi.', 'error');
       return;
@@ -1546,7 +1544,7 @@
       var jeda = (tugas.jalur === 'reasoner') ? BATCH_DELAY_REASONER_MS : BATCH_DELAY_FAST_MS;
       jedaBatch(jeda, jalanBatchBerikutnya);
     }, function (err) {
-      setBusy(false, '⚡ Generate Soal via AI');
+      setBusy(false, '⚡ Generate Soal');
       hideProgress();
       if (generatedSoalList.length) renderPreview();
 
@@ -1561,8 +1559,8 @@
           ' Hubungi admin untuk menambah kuota.', 'error');
         return;
       }
-      if (pesan.indexOf('Limit AI') !== -1 || pesan.indexOf('Limit Groq') !== -1 || pesan.indexOf('429') !== -1) {
-        showAlert('⏳ Limit API AI tercapai. Soal yang sudah jadi (' +
+      if (pesan.indexOf('SIBUK') !== -1 || pesan.indexOf('429') !== -1 || pesan.indexOf('503') !== -1) {
+        showAlert('⏳ Layanan sedang sibuk. Soal yang sudah jadi (' +
                   generatedSoalList.length + ') tetap tampil. Tunggu ±1 menit lalu klik ' +
                   '<strong>Generate Ulang</strong>.', 'error');
         return;
@@ -1589,14 +1587,14 @@
 
   function selesaikanGenerate() {
     if (!generatedSoalList.length) {
-      setBusy(false, '⚡ Generate Soal via AI');
+      setBusy(false, '⚡ Generate Soal');
       hideProgress();
-      showAlert('AI tidak menghasilkan soal. Silakan klik Generate lagi.', 'error');
+      showAlert('Tidak ada soal yang dihasilkan. Silakan klik Generate lagi.', 'error');
       return;
     }
 
     showProgress(generatedSoalList.length, generatedSoalList.length);
-    showAlert('Menyiapkan gambar & menyimpan ke spreadsheet...');
+    showAlert('Menyiapkan gambar & menyimpan soal...');
 
     var tpSimpan = tpRingkas(tpAktif || selectedTP);
     var kodeTp = tpSimpan.kodeTp;
@@ -1622,7 +1620,7 @@
         if (nEsai) rincian.push(nEsai + ' esai');
 
         showAlert('✅ Berhasil! ' + rincian.join(' + ') +
-                  ' tersimpan di sheet "Bank Soal & Latihan".', 'success');
+                  ' tersimpan.', 'success');
         renderPreview();
 
         callGAS('cekSesi', {}, function (info) {
@@ -1633,7 +1631,7 @@
         setBusy(false, '🔁 Generate Ulang');
         hideProgress();
         renderPreview();
-        showAlert('⚠️ Soal sudah dibuat, tapi gagal disimpan ke sheet: ' + esc(err.message), 'error');
+        showAlert('⚠️ Soal sudah dibuat, tapi gagal disimpan: ' + esc(err.message), 'error');
       });
     });
   }
